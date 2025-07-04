@@ -6,10 +6,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useAppStore } from "@/stores/useAppStore";
 import { CampañaPrensa } from "@/types";
 import { Plus, Edit, Trash2, Receipt } from "lucide-react";
+import { CampañaForm } from "@/components/forms/CampañaForm";
 
 export default function Campanas() {
   const { campañas, clientes, deleteCampaña } = useAppStore();
   const [selectedCampaña, setSelectedCampaña] = useState<CampañaPrensa | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [editingCampaña, setEditingCampaña] = useState<CampañaPrensa | null>(null);
 
   const getClienteName = (clienteId: string) => {
     const cliente = clientes.find(c => c.id === clienteId);
@@ -59,6 +62,16 @@ export default function Campanas() {
     }
   };
 
+  const handleEdit = (campaña: CampañaPrensa) => {
+    setEditingCampaña(campaña);
+    setShowForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditingCampaña(null);
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -70,7 +83,10 @@ export default function Campanas() {
           </p>
         </div>
         
-        <Button className="bg-gradient-primary shadow-elegant hover:shadow-hover">
+        <Button 
+          className="bg-gradient-primary shadow-elegant hover:shadow-hover"
+          onClick={() => setShowForm(true)}
+        >
           <Plus className="mr-2 h-4 w-4" />
           Nueva Campaña
         </Button>
@@ -176,6 +192,7 @@ export default function Campanas() {
                           variant="outline"
                           size="sm"
                           className="h-8 w-8 p-0"
+                          onClick={() => handleEdit(campaña)}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -202,6 +219,12 @@ export default function Campanas() {
           </div>
         </CardContent>
       </Card>
+
+      <CampañaForm 
+        isOpen={showForm}
+        onClose={handleCloseForm}
+        campaña={editingCampaña || undefined}
+      />
     </div>
   );
 }

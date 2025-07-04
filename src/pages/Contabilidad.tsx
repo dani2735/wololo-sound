@@ -4,14 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAppStore } from "@/stores/useAppStore";
-import { MovimientoContable } from "@/types";
+import { MovimientoContable, TipoMovimiento } from "@/types";
 import { Plus, Edit, Trash2, TrendingUp, TrendingDown } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import { MovimientoForm } from "@/components/forms/MovimientoForm";
 
 export default function Contabilidad() {
   const location = useLocation();
   const { movimientos, clientes, deleteMovimiento } = useAppStore();
   const [selectedMovimiento, setSelectedMovimiento] = useState<MovimientoContable | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [editingMovimiento, setEditingMovimiento] = useState<MovimientoContable | null>(null);
+  const [formTipo, setFormTipo] = useState<TipoMovimiento>("cobro");
 
   // Determine which account to show based on route
   const isShowingAll = location.pathname === "/contabilidad";
@@ -47,6 +51,23 @@ export default function Contabilidad() {
     }
   };
 
+  const handleEdit = (movimiento: MovimientoContable) => {
+    setEditingMovimiento(movimiento);
+    setFormTipo(movimiento.tipo);
+    setShowForm(true);
+  };
+
+  const handleNewMovimiento = (tipo: TipoMovimiento) => {
+    setEditingMovimiento(null);
+    setFormTipo(tipo);
+    setShowForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditingMovimiento(null);
+  };
+
   // Calculate totals
   const totalCobros = filteredMovimientos
     .filter(m => m.tipo === "cobro")
@@ -76,11 +97,18 @@ export default function Contabilidad() {
         </div>
         
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button variant="outline" className="shadow-card">
+          <Button 
+            variant="outline" 
+            className="shadow-card"
+            onClick={() => handleNewMovimiento("pago")}
+          >
             <Plus className="mr-2 h-4 w-4" />
             Nuevo Pago
           </Button>
-          <Button className="bg-gradient-primary shadow-elegant hover:shadow-hover">
+          <Button 
+            className="bg-gradient-primary shadow-elegant hover:shadow-hover"
+            onClick={() => handleNewMovimiento("cobro")}
+          >
             <Plus className="mr-2 h-4 w-4" />
             Nuevo Cobro
           </Button>
@@ -198,7 +226,7 @@ export default function Contabilidad() {
                           className="h-8 w-8 p-0"
                           onClick={(e) => {
                             e.stopPropagation();
-                            // TODO: Open edit modal
+                            handleEdit(movimiento);
                           }}
                         >
                           <Edit className="h-4 w-4" />
@@ -229,6 +257,13 @@ export default function Contabilidad() {
           </div>
         </CardContent>
       </Card>
+
+      <MovimientoForm 
+        isOpen={showForm}
+        onClose={handleCloseForm}
+        tipo={formTipo}
+        movimiento={editingMovimiento || undefined}
+      />
     </div>
   );
 }

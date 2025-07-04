@@ -7,11 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAppStore } from "@/stores/useAppStore";
 import { Factura } from "@/types";
 import { Plus, Edit, Trash2, FileText, Euro } from "lucide-react";
+import { FacturaForm } from "@/components/forms/FacturaForm";
 
 export default function Facturacion() {
   const { facturas, clientes, deleteFactura } = useAppStore();
   const [selectedFactura, setSelectedFactura] = useState<Factura | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<string>("todas");
+  const [showForm, setShowForm] = useState(false);
+  const [editingFactura, setEditingFactura] = useState<Factura | null>(null);
 
   const filteredFacturas = facturas.filter(factura => {
     if (filtroEstado === "cobradas") return factura.estadoCobro === "Cobrado";
@@ -34,6 +37,16 @@ export default function Facturacion() {
     }
   };
 
+  const handleEdit = (factura: Factura) => {
+    setEditingFactura(factura);
+    setShowForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditingFactura(null);
+  };
+
   // Calculate totals
   const totalFacturado = filteredFacturas.reduce((acc, f) => acc + f.precio + f.iva, 0);
   const totalCobrado = filteredFacturas
@@ -54,7 +67,10 @@ export default function Facturacion() {
           </p>
         </div>
         
-        <Button className="bg-gradient-primary shadow-elegant hover:shadow-hover">
+        <Button 
+          className="bg-gradient-primary shadow-elegant hover:shadow-hover"
+          onClick={() => setShowForm(true)}
+        >
           <Plus className="mr-2 h-4 w-4" />
           Nueva Factura
         </Button>
@@ -220,7 +236,7 @@ export default function Facturacion() {
                           className="h-8 w-8 p-0"
                           onClick={(e) => {
                             e.stopPropagation();
-                            // TODO: Open edit modal
+                            handleEdit(factura);
                           }}
                         >
                           <Edit className="h-4 w-4" />
@@ -254,6 +270,12 @@ export default function Facturacion() {
           </div>
         </CardContent>
       </Card>
+
+      <FacturaForm 
+        isOpen={showForm}
+        onClose={handleCloseForm}
+        factura={editingFactura || undefined}
+      />
     </div>
   );
 }

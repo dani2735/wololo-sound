@@ -5,10 +5,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useAppStore } from "@/stores/useAppStore";
 import { Cliente } from "@/types";
 import { Plus, Edit, Trash2, Users } from "lucide-react";
+import { ClienteForm } from "@/components/forms/ClienteForm";
 
 export default function Clientes() {
   const { clientes, campañas, deleteCliente } = useAppStore();
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
 
   const getCampaignCount = (clienteId: string) => {
     return campañas.filter(c => c.clienteId === clienteId).length;
@@ -32,6 +35,16 @@ export default function Clientes() {
     }
   };
 
+  const handleEdit = (cliente: Cliente) => {
+    setEditingCliente(cliente);
+    setShowForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditingCliente(null);
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -43,7 +56,10 @@ export default function Clientes() {
           </p>
         </div>
         
-        <Button className="bg-gradient-primary shadow-elegant hover:shadow-hover">
+        <Button 
+          className="bg-gradient-primary shadow-elegant hover:shadow-hover"
+          onClick={() => setShowForm(true)}
+        >
           <Plus className="mr-2 h-4 w-4" />
           Nuevo Cliente
         </Button>
@@ -117,7 +133,7 @@ export default function Clientes() {
                           className="h-8 w-8 p-0"
                           onClick={(e) => {
                             e.stopPropagation();
-                            // TODO: Open edit modal
+                            handleEdit(cliente);
                           }}
                         >
                           <Edit className="h-4 w-4" />
@@ -224,6 +240,12 @@ export default function Clientes() {
           </div>
         </Card>
       )}
+
+      <ClienteForm 
+        isOpen={showForm}
+        onClose={handleCloseForm}
+        cliente={editingCliente || undefined}
+      />
     </div>
   );
 }
