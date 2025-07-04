@@ -1,0 +1,161 @@
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { CampañaPrensa, Cliente, Factura, MovimientoContable, DashboardData } from '@/types';
+import { sampleClientes, sampleCampañas, sampleFacturas, sampleMovimientos } from '@/data/sampleData';
+
+interface AppStore {
+  // Data
+  campañas: CampañaPrensa[];
+  clientes: Cliente[];
+  facturas: Factura[];
+  movimientos: MovimientoContable[];
+  
+  // Dashboard state
+  mesSeleccionado: number;
+  añoSeleccionado: number;
+  
+  // Actions - Campañas
+  addCampaña: (campaña: CampañaPrensa) => void;
+  updateCampaña: (id: string, campaña: Partial<CampañaPrensa>) => void;
+  deleteCampaña: (id: string) => void;
+  
+  // Actions - Clientes
+  addCliente: (cliente: Cliente) => void;
+  updateCliente: (id: string, cliente: Partial<Cliente>) => void;
+  deleteCliente: (id: string) => void;
+  
+  // Actions - Facturas
+  addFactura: (factura: Factura) => void;
+  updateFactura: (id: string, factura: Partial<Factura>) => void;
+  deleteFactura: (id: string) => void;
+  
+  // Actions - Movimientos
+  addMovimiento: (movimiento: MovimientoContable) => void;
+  updateMovimiento: (id: string, movimiento: Partial<MovimientoContable>) => void;
+  deleteMovimiento: (id: string) => void;
+  
+  // Dashboard actions
+  setMesSeleccionado: (mes: number) => void;
+  setAñoSeleccionado: (año: number) => void;
+  getDashboardData: () => DashboardData;
+}
+
+export const useAppStore = create<AppStore>()(
+  persist(
+    (set, get) => ({
+      // Initial state with sample data
+      campañas: sampleCampañas,
+      clientes: sampleClientes,
+      facturas: sampleFacturas,
+      movimientos: sampleMovimientos,
+      mesSeleccionado: new Date().getMonth() + 1,
+      añoSeleccionado: new Date().getFullYear(),
+      
+      // Campañas actions
+      addCampaña: (campaña) => set(state => ({ 
+        campañas: [...state.campañas, campaña] 
+      })),
+      updateCampaña: (id, updates) => set(state => ({
+        campañas: state.campañas.map(c => c.id === id ? { ...c, ...updates } : c)
+      })),
+      deleteCampaña: (id) => set(state => ({
+        campañas: state.campañas.filter(c => c.id !== id)
+      })),
+      
+      // Clientes actions
+      addCliente: (cliente) => set(state => ({ 
+        clientes: [...state.clientes, cliente] 
+      })),
+      updateCliente: (id, updates) => set(state => ({
+        clientes: state.clientes.map(c => c.id === id ? { ...c, ...updates } : c)
+      })),
+      deleteCliente: (id) => set(state => ({
+        clientes: state.clientes.filter(c => c.id !== id)
+      })),
+      
+      // Facturas actions
+      addFactura: (factura) => set(state => ({ 
+        facturas: [...state.facturas, factura] 
+      })),
+      updateFactura: (id, updates) => set(state => ({
+        facturas: state.facturas.map(f => f.id === id ? { ...f, ...updates } : f)
+      })),
+      deleteFactura: (id) => set(state => ({
+        facturas: state.facturas.filter(f => f.id !== id)
+      })),
+      
+      // Movimientos actions
+      addMovimiento: (movimiento) => set(state => ({ 
+        movimientos: [...state.movimientos, movimiento] 
+      })),
+      updateMovimiento: (id, updates) => set(state => ({
+        movimientos: state.movimientos.map(m => m.id === id ? { ...m, ...updates } : m)
+      })),
+      deleteMovimiento: (id) => set(state => ({
+        movimientos: state.movimientos.filter(m => m.id !== id)
+      })),
+      
+      // Dashboard actions
+      setMesSeleccionado: (mes) => set({ mesSeleccionado: mes }),
+      setAñoSeleccionado: (año) => set({ añoSeleccionado: año }),
+      
+      getDashboardData: () => {
+        const state = get();
+        const { movimientos, facturas, mesSeleccionado, añoSeleccionado } = state;
+        
+        // Calculate account balances
+        const cuentaSL = movimientos
+          .filter(m => m.cuenta === 'Cuenta SL')
+          .reduce((acc, m) => acc + (m.tipo === 'cobro' ? m.precio : -m.precio), 0);
+          
+        const cuentaPaypal = movimientos
+          .filter(m => m.cuenta === 'Paypal')
+          .reduce((acc, m) => acc + (m.tipo === 'cobro' ? m.precio : -m.precio), 0);
+        
+        // Calculate pending invoices
+        const totalFacturadoPendiente = facturas
+          .filter(f => f.estadoCobro === 'Sin cobrar')
+          .reduce((acc, f) => acc + f.precio + f.iva, 0);
+        
+        // Calculate monthly data
+        const monthlyFacturas = facturas.filter(f => {
+          const date = new Date(f.fecha);
+          return date.getMonth() + 1 === mesSeleccionado && date.getFullYear() === añoSeleccionado;
+        });
+        
+        const monthlyMovimientos = movimientos.filter(m => {
+          const date = new Date(m.fecha);
+          return date.getMonth() + 1 === mesSeleccionado && date.getFullYear() === añoSeleccionado;
+        });
+        
+        const totalFacturado = monthlyFacturas.reduce((acc, f) => acc + f.precio + f.iva, 0);
+        const totalCobradoSL = monthlyMovimientos
+          .filter(m => m.tipo === 'cobro' && m.cuenta === 'Cuenta SL')
+          .reduce((acc, m) => acc + m.precio, 0);
+        const totalCobradoPaypal = monthlyMovimientos
+          .filter(m => m.tipo === 'cobro' && m.cuenta === 'Paypal')
+          .reduce((acc, m) => acc + m.precio, 0);
+        
+        const numeroAcciones = state.campañas.filter(c => {
+          const date = new Date(c.fechaCreacion);
+          return date.getMonth() + 1 === mesSeleccionado && date.getFullYear() === añoSeleccionado;
+        }).length;
+        
+        return {
+          cuentaSL,
+          cuentaPaypal,
+          totalFacturadoPendiente,
+          mesSeleccionado: {
+            totalFacturado,
+            totalCobradoSL,
+            totalCobradoPaypal,
+            numeroAcciones
+          }
+        };
+      }
+    }),
+    {
+      name: 'wololo-sound-accounting',
+    }
+  )
+);
