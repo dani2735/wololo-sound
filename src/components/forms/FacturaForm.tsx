@@ -24,6 +24,9 @@ import { Label } from "@/components/ui/label";
 import { useAppStore } from "@/stores/useAppStore";
 import { Factura, CampañaPrensa, TipoIVA } from "@/types";
 import { useEffect } from "react";
+import { pdf } from "@react-pdf/renderer";
+import { FacturaPDFTemplate } from "@/components/pdf/FacturaPDFTemplate";
+import { Download } from "lucide-react";
 
 const formSchema = z.object({
   fecha: z.string().min(1, "La fecha es requerida"),
@@ -97,7 +100,24 @@ export function FacturaForm({ isOpen, onClose, factura, campaña }: FacturaFormP
   const precio = form.watch("precio");
   const iva = tipoIva === "España" ? precio * 0.21 : 0;
 
-  const onSubmit = (data: FormData) => {
+  const downloadPDF = async (facturaData: Factura) => {
+    const clienteSeleccionado = clientes.find(c => c.id === facturaData.clienteId);
+    const blob = await pdf(
+      <FacturaPDFTemplate 
+        factura={facturaData} 
+        clienteNombre={clienteSeleccionado?.nombre || "Cliente"} 
+      />
+    ).toBlob();
+    
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Factura_${facturaData.referencia}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const onSubmit = async (data: FormData) => {
     const ivaCalculado = data.tipoIva === "España" ? data.precio * 0.21 : 0;
     
     if (isEditing && factura) {
@@ -131,6 +151,9 @@ export function FacturaForm({ isOpen, onClose, factura, campaña }: FacturaFormP
           referenciaFactura: referencia,
         });
       }
+
+      // Descargar PDF automáticamente
+      await downloadPDF(newFactura);
     }
     
     form.reset();
@@ -332,6 +355,17 @@ export function FacturaForm({ isOpen, onClose, factura, campaña }: FacturaFormP
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
+              {isEditing && factura && (
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => downloadPDF(factura)}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Descargar PDF
+                </Button>
+              )}
               <Button type="submit" className="bg-gradient-primary">
                 {isEditing ? "Actualizar" : "Crear"} Factura
               </Button>

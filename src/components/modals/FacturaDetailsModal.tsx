@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Download } from "lucide-react";
 import { Factura, CuentaMovimiento } from "@/types";
 import { useAppStore } from "@/stores/useAppStore";
 import { useState } from "react";
+import { pdf } from "@react-pdf/renderer";
+import { FacturaPDFTemplate } from "@/components/pdf/FacturaPDFTemplate";
 
 interface FacturaDetailsModalProps {
   factura: Factura;
@@ -24,6 +26,23 @@ export function FacturaDetailsModal({ factura, onClose, onEdit, onDelete }: Fact
 
   const getEstadoBadgeVariant = (estado: string) => {
     return estado === "Cobrado" ? "default" : "destructive";
+  };
+
+  const downloadPDF = async () => {
+    const clienteSeleccionado = clientes.find(c => c.id === factura.clienteId);
+    const blob = await pdf(
+      <FacturaPDFTemplate 
+        factura={factura} 
+        clienteNombre={clienteSeleccionado?.nombre || "Cliente"} 
+      />
+    ).toBlob();
+    
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Factura_${factura.referencia}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -98,6 +117,10 @@ export function FacturaDetailsModal({ factura, onClose, onEdit, onDelete }: Fact
           )}
 
           <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
+            <Button variant="outline" onClick={downloadPDF}>
+              <Download className="mr-2 h-4 w-4" />
+              Descargar PDF
+            </Button>
             <Button variant="outline" onClick={() => onEdit(factura)}>
               <Edit className="mr-2 h-4 w-4" />
               Editar
