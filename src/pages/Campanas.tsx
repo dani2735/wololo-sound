@@ -7,12 +7,15 @@ import { useAppStore } from "@/stores/useAppStore";
 import { CampañaPrensa } from "@/types";
 import { Plus, Edit, Trash2, Receipt } from "lucide-react";
 import { CampañaForm } from "@/components/forms/CampañaForm";
+import { FacturaForm } from "@/components/forms/FacturaForm";
 
 export default function Campanas() {
   const { campañas, clientes, deleteCampaña } = useAppStore();
   const [selectedCampaña, setSelectedCampaña] = useState<CampañaPrensa | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingCampaña, setEditingCampaña] = useState<CampañaPrensa | null>(null);
+  const [showFacturaForm, setShowFacturaForm] = useState(false);
+  const [facturaTargetCampaña, setFacturaTargetCampaña] = useState<CampañaPrensa | null>(null);
 
   const getClienteName = (clienteId: string) => {
     const cliente = clientes.find(c => c.id === clienteId);
@@ -72,6 +75,16 @@ export default function Campanas() {
     setEditingCampaña(null);
   };
 
+  const handleFacturar = (campaña: CampañaPrensa) => {
+    setFacturaTargetCampaña(campaña);
+    setShowFacturaForm(true);
+  };
+
+  const handleCloseFacturaForm = () => {
+    setShowFacturaForm(false);
+    setFacturaTargetCampaña(null);
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -93,7 +106,7 @@ export default function Campanas() {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card className="bg-gradient-card shadow-card border-0">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-muted-foreground">Total Campañas</CardTitle>
@@ -116,11 +129,33 @@ export default function Campanas() {
 
         <Card className="bg-gradient-card shadow-card border-0">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Pendientes</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground">Terminadas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-success">
+              {campañas.filter(c => c.estado === "TERMINADO").length}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-card shadow-card border-0">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-muted-foreground">Pendientes Facturar</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
-              {campañas.filter(c => c.estado === "PENDIENTE").length}
+              {campañas.filter(c => c.tipoCobro.includes("Factura") && c.estadoFacturacion === "Sin facturar").length}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-card shadow-card border-0">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-muted-foreground">Pendientes Cobrar</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-destructive">
+              {campañas.filter(c => c.estadoCobro === "Sin cobrar").length}
             </div>
           </CardContent>
         </Card>
@@ -143,12 +178,15 @@ export default function Campanas() {
                   <TableHead>Estado</TableHead>
                   <TableHead>Tipo Cobro</TableHead>
                   <TableHead>Estado Cobro</TableHead>
-                  <TableHead>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {campañas.map((campaña) => (
-                  <TableRow key={campaña.id} className="hover:bg-accent/50">
+                  <TableRow 
+                    key={campaña.id} 
+                    className="hover:bg-accent/50 cursor-pointer"
+                    onClick={() => setSelectedCampaña(campaña)}
+                  >
                     <TableCell>
                       {new Date(campaña.fechaCreacion).toLocaleDateString('es-ES')}
                     </TableCell>
@@ -177,35 +215,6 @@ export default function Campanas() {
                         {campaña.estadoCobro}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        {campaña.tipoCobro.includes("Factura") && campaña.estadoFacturacion === "Sin facturar" && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                          >
-                            <Receipt className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          onClick={() => handleEdit(campaña)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                          onClick={() => handleDelete(campaña.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -220,10 +229,105 @@ export default function Campanas() {
         </CardContent>
       </Card>
 
+      {/* Campaign Details Modal */}
+      {selectedCampaña && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-card rounded-lg shadow-elegant max-w-4xl w-full max-h-[80vh] overflow-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold">Detalles de la Campaña</h2>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedCampaña(null)}
+                >
+                  ✕
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-semibold mb-3">Información General</h3>
+                  <div className="space-y-2">
+                    <p><strong>Cliente:</strong> {getClienteName(selectedCampaña.clienteId)}</p>
+                    <p><strong>Fecha Creación:</strong> {new Date(selectedCampaña.fechaCreacion).toLocaleDateString('es-ES')}</p>
+                    <p><strong>Estado:</strong> <Badge variant={getEstadoBadgeVariant(selectedCampaña.estado)}>{selectedCampaña.estado}</Badge></p>
+                    <p><strong>Precio:</strong> {selectedCampaña.precio.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p>
+                    <p><strong>Tipo Cobro:</strong> {selectedCampaña.tipoCobro}</p>
+                    <p><strong>Estado Cobro:</strong> <Badge variant={getCobroBadgeVariant(selectedCampaña.estadoCobro)}>{selectedCampaña.estadoCobro}</Badge></p>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-3">Acciones</h3>
+                  <p className="text-sm">{formatAcciones(selectedCampaña.acciones)}</p>
+                </div>
+              </div>
+
+              {selectedCampaña.detalles && (
+                <div className="mt-4">
+                  <h3 className="font-semibold mb-2">Detalles</h3>
+                  <p className="text-sm text-muted-foreground">{selectedCampaña.detalles}</p>
+                </div>
+              )}
+
+              {selectedCampaña.comentarios && (
+                <div className="mt-4">
+                  <h3 className="font-semibold mb-2">Comentarios</h3>
+                  <p className="text-sm text-muted-foreground">{selectedCampaña.comentarios}</p>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
+                {selectedCampaña.tipoCobro.includes("Factura") && selectedCampaña.estadoFacturacion === "Sin facturar" && (
+                  <Button
+                    onClick={() => {
+                      setSelectedCampaña(null);
+                      handleFacturar(selectedCampaña);
+                    }}
+                    className="bg-gradient-primary"
+                  >
+                    <Receipt className="mr-2 h-4 w-4" />
+                    Facturar
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedCampaña(null);
+                    handleEdit(selectedCampaña);
+                  }}
+                >
+                  <Edit className="mr-2 h-4 w-4" />
+                  Editar
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    handleDelete(selectedCampaña.id);
+                    setSelectedCampaña(null);
+                  }}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Borrar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <CampañaForm 
         isOpen={showForm}
         onClose={handleCloseForm}
         campaña={editingCampaña || undefined}
+      />
+
+      <FacturaForm 
+        isOpen={showFacturaForm}
+        onClose={handleCloseFacturaForm}
+        campaña={facturaTargetCampaña || undefined}
       />
     </div>
   );

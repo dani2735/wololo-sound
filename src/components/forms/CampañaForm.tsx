@@ -236,7 +236,7 @@ export function CampañaForm({ isOpen, onClose, campaña }: CampañaFormProps) {
                       {campos.map((campo) => (
                         <div key={campo} className="flex items-center justify-between p-2 border rounded-md">
                           <span className="text-sm">
-                            {accionesNames[campo as keyof typeof accionesNames]}
+                            {accionesNames[campo as keyof typeof accionesNames]?.replace(/^(IG|Web|Podcast|YouTube)\s/, '') || campo}
                           </span>
                           <div className="flex items-center gap-2">
                             <Button

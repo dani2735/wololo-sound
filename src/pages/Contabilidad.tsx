@@ -8,6 +8,7 @@ import { MovimientoContable, TipoMovimiento } from "@/types";
 import { Plus, Edit, Trash2, TrendingUp, TrendingDown } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { MovimientoForm } from "@/components/forms/MovimientoForm";
+import { MovimientoDetailsModal } from "@/components/modals/MovimientoDetailsModal";
 
 export default function Contabilidad() {
   const location = useLocation();
@@ -183,7 +184,7 @@ export default function Contabilidad() {
                   <TableHead>Cliente</TableHead>
                   <TableHead>Precio</TableHead>
                   {isShowingAll && <TableHead>Cuenta</TableHead>}
-                  <TableHead>Acciones</TableHead>
+                  
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -218,32 +219,6 @@ export default function Contabilidad() {
                         <Badge variant="outline">{movimiento.cuenta}</Badge>
                       </TableCell>
                     )}
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEdit(movimiento);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(movimiento.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -257,6 +232,21 @@ export default function Contabilidad() {
           </div>
         </CardContent>
       </Card>
+
+      {selectedMovimiento && (
+        <MovimientoDetailsModal
+          movimiento={selectedMovimiento}
+          onClose={() => setSelectedMovimiento(null)}
+          onEdit={(movimiento) => {
+            setSelectedMovimiento(null);
+            handleEdit(movimiento);
+          }}
+          onDelete={(id) => {
+            handleDelete(id);
+            setSelectedMovimiento(null);
+          }}
+        />
+      )}
 
       <MovimientoForm 
         isOpen={showForm}

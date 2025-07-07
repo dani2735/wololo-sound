@@ -8,6 +8,7 @@ import { useAppStore } from "@/stores/useAppStore";
 import { Factura } from "@/types";
 import { Plus, Edit, Trash2, FileText, Euro } from "lucide-react";
 import { FacturaForm } from "@/components/forms/FacturaForm";
+import { FacturaDetailsModal } from "@/components/modals/FacturaDetailsModal";
 
 export default function Facturacion() {
   const { facturas, clientes, deleteFactura } = useAppStore();
@@ -169,7 +170,7 @@ export default function Facturacion() {
                   <TableHead>IVA</TableHead>
                   <TableHead>Total</TableHead>
                   <TableHead>Estado Cobro</TableHead>
-                  <TableHead>Acciones</TableHead>
+                  
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -215,45 +216,6 @@ export default function Facturacion() {
                         {factura.estadoCobro}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        {factura.estadoCobro === "Sin cobrar" && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-xs px-2"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // TODO: Open cobro modal
-                            }}
-                          >
-                            Cobrar
-                          </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEdit(factura);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(factura.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -270,6 +232,21 @@ export default function Facturacion() {
           </div>
         </CardContent>
       </Card>
+
+      {selectedFactura && (
+        <FacturaDetailsModal
+          factura={selectedFactura}
+          onClose={() => setSelectedFactura(null)}
+          onEdit={(factura) => {
+            setSelectedFactura(null);
+            handleEdit(factura);
+          }}
+          onDelete={(id) => {
+            handleDelete(id);
+            setSelectedFactura(null);
+          }}
+        />
+      )}
 
       <FacturaForm 
         isOpen={showForm}

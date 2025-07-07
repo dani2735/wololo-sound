@@ -22,7 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useAppStore } from "@/stores/useAppStore";
-import { Factura, TipoIVA } from "@/types";
+import { Factura, CampañaPrensa, TipoIVA } from "@/types";
 import { useEffect } from "react";
 
 const formSchema = z.object({
@@ -42,9 +42,10 @@ interface FacturaFormProps {
   isOpen: boolean;
   onClose: () => void;
   factura?: Factura;
+  campaña?: CampañaPrensa;
 }
 
-export function FacturaForm({ isOpen, onClose, factura }: FacturaFormProps) {
+export function FacturaForm({ isOpen, onClose, factura, campaña }: FacturaFormProps) {
   const { clientes, facturas, addFactura, updateFactura } = useAppStore();
   const isEditing = !!factura;
 
@@ -62,15 +63,18 @@ export function FacturaForm({ isOpen, onClose, factura }: FacturaFormProps) {
     return `${nextNumber.toString().padStart(3, '0')}.${currentYear}`;
   };
 
+  // Get client data if creating from campaign
+  const clienteData = campaña ? clientes.find(c => c.id === campaña.clienteId) : null;
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       fecha: factura?.fecha || new Date().toISOString().split('T')[0],
-      clienteId: factura?.clienteId || "",
-      nombrePagador: factura?.nombrePagador || "",
-      nif: factura?.nif || "",
-      direccion: factura?.direccion || "",
-      precio: factura?.precio || 0,
+      clienteId: factura?.clienteId || campaña?.clienteId || "",
+      nombrePagador: factura?.nombrePagador || clienteData?.nombrePagador || "",
+      nif: factura?.nif || clienteData?.nif || "",
+      direccion: factura?.direccion || clienteData?.direccion || "",
+      precio: factura?.precio || campaña?.precio || 0,
       tipoIva: factura?.tipoIva || "España",
       datosAcciones: factura?.datosAcciones || "Servicios de promoción online en Wololo Sound",
     },

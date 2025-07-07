@@ -95,7 +95,7 @@ export default function Clientes() {
                   <TableHead>Dirección</TableHead>
                   <TableHead>Campañas</TableHead>
                   <TableHead>Total Facturado</TableHead>
-                  <TableHead>Acciones</TableHead>
+                  
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -103,7 +103,7 @@ export default function Clientes() {
                   <TableRow 
                     key={cliente.id} 
                     className="hover:bg-accent/50 cursor-pointer"
-                    onClick={() => setSelectedCliente(cliente)}
+                    onClick={() => handleEdit(cliente)}
                   >
                     <TableCell className="font-medium">{cliente.nombre}</TableCell>
                     <TableCell>{cliente.nombrePagador}</TableCell>
@@ -124,32 +124,6 @@ export default function Clientes() {
                         style: 'currency', 
                         currency: 'EUR' 
                       })}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEdit(cliente);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(cliente.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
