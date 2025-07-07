@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAppStore } from "@/stores/useAppStore";
 import { CampañaPrensa } from "@/types";
-import { Plus, Edit, Trash2, Receipt, CheckSquare } from "lucide-react";
+import { Plus, Edit, Trash2, Receipt, CheckSquare, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { CampañaForm } from "@/components/forms/CampañaForm";
 import { CampañaDetailsModal } from "@/components/modals/CampañaDetailsModal";
 import { FacturaForm } from "@/components/forms/FacturaForm";
@@ -20,6 +20,9 @@ export default function Campanas() {
   const [facturandoCampaña, setFacturandoCampaña] = useState<CampañaPrensa | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [sortField, setSortField] = useState<string>("");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [filtroEstado, setFiltroEstado] = useState<string>("");
 
   const getClienteName = (clienteId: string) => {
     const cliente = clientes.find(c => c.id === clienteId);
@@ -120,6 +123,49 @@ export default function Campanas() {
     }
   };
 
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const getSortIcon = (field: string) => {
+    if (sortField !== field) return <ArrowUpDown className="h-4 w-4" />;
+    return sortDirection === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
+  };
+
+  const filteredAndSortedCampañas = campañas
+    .filter(campaña => {
+      if (filtroEstado === "EN CURSO") return campaña.estado === "EN CURSO";
+      if (filtroEstado === "TERMINADO") return campaña.estado === "TERMINADO";
+      if (filtroEstado === "PENDIENTE_FACTURAR") return campaña.tipoCobro.includes("Factura") && campaña.estadoFacturacion === "Sin facturar";
+      if (filtroEstado === "PENDIENTE_COBRAR") return campaña.estadoCobro === "Sin cobrar";
+      return true;
+    })
+    .sort((a, b) => {
+      if (!sortField) return 0;
+      
+      let aValue: any = a[sortField as keyof CampañaPrensa];
+      let bValue: any = b[sortField as keyof CampañaPrensa];
+      
+      if (sortField === "clienteId") {
+        aValue = getClienteName(a.clienteId);
+        bValue = getClienteName(b.clienteId);
+      }
+      
+      if (typeof aValue === "string") {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+      }
+      
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -163,7 +209,10 @@ export default function Campanas() {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <Card className="bg-gradient-card shadow-card border-0">
+        <Card 
+          className={`bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover ${filtroEstado === "" ? "ring-2 ring-primary" : ""}`}
+          onClick={() => setFiltroEstado("")}
+        >
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-muted-foreground">Total Campañas</CardTitle>
           </CardHeader>
@@ -172,7 +221,10 @@ export default function Campanas() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card shadow-card border-0">
+        <Card 
+          className={`bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover ${filtroEstado === "EN CURSO" ? "ring-2 ring-primary" : ""}`}
+          onClick={() => setFiltroEstado("EN CURSO")}
+        >
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-muted-foreground">En Curso</CardTitle>
           </CardHeader>
@@ -183,7 +235,10 @@ export default function Campanas() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card shadow-card border-0">
+        <Card 
+          className={`bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover ${filtroEstado === "TERMINADO" ? "ring-2 ring-primary" : ""}`}
+          onClick={() => setFiltroEstado("TERMINADO")}
+        >
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-muted-foreground">Terminadas</CardTitle>
           </CardHeader>
@@ -194,7 +249,10 @@ export default function Campanas() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card shadow-card border-0">
+        <Card 
+          className={`bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover ${filtroEstado === "PENDIENTE_FACTURAR" ? "ring-2 ring-primary" : ""}`}
+          onClick={() => setFiltroEstado("PENDIENTE_FACTURAR")}
+        >
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-muted-foreground">Pendientes Facturar</CardTitle>
           </CardHeader>
@@ -205,7 +263,10 @@ export default function Campanas() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card shadow-card border-0">
+        <Card 
+          className={`bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover ${filtroEstado === "PENDIENTE_COBRAR" ? "ring-2 ring-primary" : ""}`}
+          onClick={() => setFiltroEstado("PENDIENTE_COBRAR")}
+        >
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-muted-foreground">Pendientes Cobrar</CardTitle>
           </CardHeader>
@@ -235,17 +296,62 @@ export default function Campanas() {
                       />
                     </TableHead>
                   )}
-                  <TableHead>Fecha Creación</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Acciones</TableHead>
-                  <TableHead>Precio</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Tipo Cobro</TableHead>
-                  <TableHead>Estado Cobro</TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("fechaCreacion")}
+                     >
+                       Fecha Creación
+                       {getSortIcon("fechaCreacion")}
+                     </Button>
+                   </TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("clienteId")}
+                     >
+                       Cliente
+                       {getSortIcon("clienteId")}
+                     </Button>
+                   </TableHead>
+                   <TableHead>Acciones</TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("precio")}
+                     >
+                       Precio
+                       {getSortIcon("precio")}
+                     </Button>
+                   </TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("estado")}
+                     >
+                       Estado
+                       {getSortIcon("estado")}
+                     </Button>
+                   </TableHead>
+                   <TableHead>Tipo Cobro</TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("estadoCobro")}
+                     >
+                       Estado Cobro
+                       {getSortIcon("estadoCobro")}
+                     </Button>
+                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {campañas.map((campaña) => (
+                {filteredAndSortedCampañas.map((campaña) => (
                   <TableRow 
                     key={campaña.id} 
                     className="hover:bg-accent/50 cursor-pointer"
@@ -299,9 +405,12 @@ export default function Campanas() {
               </TableBody>
             </Table>
             
-            {campañas.length === 0 && (
+            {filteredAndSortedCampañas.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
-                No hay campañas registradas. ¡Crea tu primera campaña!
+                {filtroEstado === "" 
+                  ? "No hay campañas registradas. ¡Crea tu primera campaña!" 
+                  : "No hay campañas que coincidan con el filtro seleccionado."
+                }
               </div>
             )}
           </div>

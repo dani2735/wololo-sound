@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAppStore } from "@/stores/useAppStore";
 import { Factura } from "@/types";
-import { Plus, Edit, Trash2, FileText, Euro, CheckSquare } from "lucide-react";
+import { Plus, Edit, Trash2, FileText, Euro, CheckSquare, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { FacturaForm } from "@/components/forms/FacturaForm";
 import { FacturaDetailsModal } from "@/components/modals/FacturaDetailsModal";
 
@@ -19,6 +19,8 @@ export default function Facturacion() {
   const [editingFactura, setEditingFactura] = useState<Factura | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [sortField, setSortField] = useState<string>("");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   const filteredFacturas = facturas.filter(factura => {
     if (filtroEstado === "cobradas") return factura.estadoCobro === "Cobrado";
@@ -81,6 +83,44 @@ export default function Facturacion() {
       setSelectionMode(false);
     }
   };
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const getSortIcon = (field: string) => {
+    if (sortField !== field) return <ArrowUpDown className="h-4 w-4" />;
+    return sortDirection === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
+  };
+
+  const sortedFacturas = filteredFacturas.sort((a, b) => {
+    if (!sortField) return 0;
+    
+    let aValue: any = a[sortField as keyof Factura];
+    let bValue: any = b[sortField as keyof Factura];
+    
+    if (sortField === "clienteId") {
+      aValue = getClienteName(a.clienteId);
+      bValue = getClienteName(b.clienteId);
+    } else if (sortField === "total") {
+      aValue = a.precio + a.iva;
+      bValue = b.precio + b.iva;
+    }
+    
+    if (typeof aValue === "string") {
+      aValue = aValue.toLowerCase();
+      bValue = bValue.toLowerCase();
+    }
+    
+    if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+    if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+    return 0;
+  });
 
   // Calculate totals
   const totalFacturado = filteredFacturas.reduce((acc, f) => acc + f.precio + f.iva, 0);
@@ -224,19 +264,91 @@ export default function Facturacion() {
                       />
                     </TableHead>
                   )}
-                  <TableHead>Fecha Facturación</TableHead>
-                  <TableHead>Referencia</TableHead>
-                  <TableHead>Pagador</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Detalles</TableHead>
-                  <TableHead>Precio</TableHead>
-                  <TableHead>IVA</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Estado Cobro</TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("fecha")}
+                     >
+                       Fecha Facturación
+                       {getSortIcon("fecha")}
+                     </Button>
+                   </TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("referencia")}
+                     >
+                       Referencia
+                       {getSortIcon("referencia")}
+                     </Button>
+                   </TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("nombrePagador")}
+                     >
+                       Pagador
+                       {getSortIcon("nombrePagador")}
+                     </Button>
+                   </TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("clienteId")}
+                     >
+                       Cliente
+                       {getSortIcon("clienteId")}
+                     </Button>
+                   </TableHead>
+                   <TableHead>Detalles</TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("precio")}
+                     >
+                       Precio
+                       {getSortIcon("precio")}
+                     </Button>
+                   </TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("iva")}
+                     >
+                       IVA
+                       {getSortIcon("iva")}
+                     </Button>
+                   </TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("total")}
+                     >
+                       Total
+                       {getSortIcon("total")}
+                     </Button>
+                   </TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("estadoCobro")}
+                     >
+                       Estado Cobro
+                       {getSortIcon("estadoCobro")}
+                     </Button>
+                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredFacturas.map((factura) => (
+                {sortedFacturas.map((factura) => (
                   <TableRow 
                     key={factura.id} 
                     className="hover:bg-accent/50 cursor-pointer"

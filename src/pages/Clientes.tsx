@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAppStore } from "@/stores/useAppStore";
 import { Cliente } from "@/types";
-import { Plus, Edit, Trash2, Users, CheckSquare } from "lucide-react";
+import { Plus, Edit, Trash2, Users, CheckSquare, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { ClienteForm } from "@/components/forms/ClienteForm";
 import { ClienteDetailsModal } from "@/components/modals/ClienteDetailsModal";
 
@@ -16,6 +16,8 @@ export default function Clientes() {
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [sortField, setSortField] = useState<string>("");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   const getCampaignCount = (clienteId: string) => {
     return campañas.filter(c => c.clienteId === clienteId).length;
@@ -85,6 +87,44 @@ export default function Clientes() {
       setSelectionMode(false);
     }
   };
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const getSortIcon = (field: string) => {
+    if (sortField !== field) return <ArrowUpDown className="h-4 w-4" />;
+    return sortDirection === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
+  };
+
+  const sortedClientes = clientes.sort((a, b) => {
+    if (!sortField) return 0;
+    
+    let aValue: any = a[sortField as keyof Cliente];
+    let bValue: any = b[sortField as keyof Cliente];
+    
+    if (sortField === "totalFacturado") {
+      aValue = getTotalFacturado(a.id);
+      bValue = getTotalFacturado(b.id);
+    } else if (sortField === "numCampañas") {
+      aValue = getCampaignCount(a.id);
+      bValue = getCampaignCount(b.id);
+    }
+    
+    if (typeof aValue === "string") {
+      aValue = aValue.toLowerCase();
+      bValue = bValue.toLowerCase();
+    }
+    
+    if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+    if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+    return 0;
+  });
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -159,16 +199,61 @@ export default function Clientes() {
                       />
                     </TableHead>
                   )}
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Nombre Pagador</TableHead>
-                  <TableHead>NIF</TableHead>
-                  <TableHead>Dirección</TableHead>
-                  <TableHead>Campañas</TableHead>
-                  <TableHead>Total Facturado</TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("nombre")}
+                     >
+                       Cliente
+                       {getSortIcon("nombre")}
+                     </Button>
+                   </TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("nombrePagador")}
+                     >
+                       Nombre Pagador
+                       {getSortIcon("nombrePagador")}
+                     </Button>
+                   </TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("nif")}
+                     >
+                       NIF
+                       {getSortIcon("nif")}
+                     </Button>
+                   </TableHead>
+                   <TableHead>Dirección</TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("numCampañas")}
+                     >
+                       Campañas
+                       {getSortIcon("numCampañas")}
+                     </Button>
+                   </TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("totalFacturado")}
+                     >
+                       Total Facturado
+                       {getSortIcon("totalFacturado")}
+                     </Button>
+                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {clientes.map((cliente) => (
+                {sortedClientes.map((cliente) => (
                   <TableRow 
                     key={cliente.id} 
                     className="hover:bg-accent/50 cursor-pointer"

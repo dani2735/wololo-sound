@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAppStore } from "@/stores/useAppStore";
 import { MovimientoContable, TipoMovimiento } from "@/types";
-import { Plus, Edit, Trash2, TrendingUp, TrendingDown, CheckSquare } from "lucide-react";
+import { Plus, Edit, Trash2, TrendingUp, TrendingDown, CheckSquare, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { MovimientoForm } from "@/components/forms/MovimientoForm";
 import { MovimientoDetailsModal } from "@/components/modals/MovimientoDetailsModal";
@@ -20,6 +20,8 @@ export default function Contabilidad() {
   const [formTipo, setFormTipo] = useState<TipoMovimiento>("cobro");
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [sortField, setSortField] = useState<string>("");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   // Determine which account to show based on route
   const isShowingAll = location.pathname === "/contabilidad";
@@ -102,6 +104,41 @@ export default function Contabilidad() {
       setSelectionMode(false);
     }
   };
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const getSortIcon = (field: string) => {
+    if (sortField !== field) return <ArrowUpDown className="h-4 w-4" />;
+    return sortDirection === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
+  };
+
+  const sortedMovimientos = filteredMovimientos.sort((a, b) => {
+    if (!sortField) return 0;
+    
+    let aValue: any = a[sortField as keyof MovimientoContable];
+    let bValue: any = b[sortField as keyof MovimientoContable];
+    
+    if (sortField === "clienteId") {
+      aValue = getClienteName(a.clienteId);
+      bValue = getClienteName(b.clienteId);
+    }
+    
+    if (typeof aValue === "string") {
+      aValue = aValue.toLowerCase();
+      bValue = bValue.toLowerCase();
+    }
+    
+    if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+    if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+    return 0;
+  });
 
   // Calculate totals
   const totalCobros = filteredMovimientos
@@ -239,16 +276,72 @@ export default function Contabilidad() {
                       />
                     </TableHead>
                   )}
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Pagador</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Precio</TableHead>
-                  {isShowingAll && <TableHead>Cuenta</TableHead>}
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("fecha")}
+                     >
+                       Fecha
+                       {getSortIcon("fecha")}
+                     </Button>
+                   </TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("tipo")}
+                     >
+                       Tipo
+                       {getSortIcon("tipo")}
+                     </Button>
+                   </TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("pagador")}
+                     >
+                       Pagador
+                       {getSortIcon("pagador")}
+                     </Button>
+                   </TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("clienteId")}
+                     >
+                       Cliente
+                       {getSortIcon("clienteId")}
+                     </Button>
+                   </TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("precio")}
+                     >
+                       Precio
+                       {getSortIcon("precio")}
+                     </Button>
+                   </TableHead>
+                   {isShowingAll && (
+                     <TableHead>
+                       <Button 
+                         variant="ghost" 
+                         className="h-auto p-0 font-medium hover:bg-transparent"
+                         onClick={() => handleSort("cuenta")}
+                       >
+                         Cuenta
+                         {getSortIcon("cuenta")}
+                       </Button>
+                     </TableHead>
+                   )}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredMovimientos.map((movimiento) => (
+                {sortedMovimientos.map((movimiento) => (
                   <TableRow 
                     key={movimiento.id} 
                     className="hover:bg-accent/50 cursor-pointer"
@@ -299,7 +392,7 @@ export default function Contabilidad() {
               </TableBody>
             </Table>
             
-            {filteredMovimientos.length === 0 && (
+            {sortedMovimientos.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 No hay movimientos registrados en esta cuenta.
               </div>
