@@ -42,7 +42,7 @@ export function ClienteForm({ isOpen, onClose, cliente }: ClienteFormProps) {
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
+    values: {
       nombre: cliente?.nombre || "",
       nombrePagador: cliente?.nombrePagador || "",
       nif: cliente?.nif || "",

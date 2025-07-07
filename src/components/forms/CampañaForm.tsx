@@ -43,7 +43,7 @@ const accionesSchema = z.object({
 });
 
 const formSchema = z.object({
-  clienteId: z.string().min(1, "Debe seleccionar un cliente"),
+  clienteNombre: z.string().min(1, "El nombre del cliente es requerido"),
   acciones: accionesSchema,
   detalles: z.string(),
   precio: z.number().min(0, "El precio debe ser mayor que 0"),
@@ -65,10 +65,15 @@ export function CampañaForm({ isOpen, onClose, campaña }: CampañaFormProps) {
   const { clientes, addCampaña, updateCampaña } = useAppStore();
   const isEditing = !!campaña;
 
+  const getClienteNombre = (clienteId: string) => {
+    const cliente = clientes.find(c => c.id === clienteId);
+    return cliente?.nombre || "";
+  };
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      clienteId: campaña?.clienteId || "",
+    values: {
+      clienteNombre: campaña ? getClienteNombre(campaña.clienteId) : "",
       acciones: campaña?.acciones || {
         instagramPost: 0,
         instagramFlyer: 0,
@@ -124,9 +129,20 @@ export function CampañaForm({ isOpen, onClose, campaña }: CampañaFormProps) {
   const onSubmit = (data: FormData) => {
     const fechaCreacion = new Date().toISOString().split('T')[0];
     
+    // Find or create client
+    let clienteId = "";
+    const existingCliente = clientes.find(c => c.nombre.toLowerCase() === data.clienteNombre.toLowerCase());
+    
+    if (existingCliente) {
+      clienteId = existingCliente.id;
+    } else {
+      // Create a temporary client ID for campaigns without full client data
+      clienteId = `temp_client_${Date.now()}`;
+    }
+    
     if (isEditing && campaña) {
       updateCampaña(campaña.id, {
-        clienteId: data.clienteId,
+        clienteId: clienteId,
         acciones: data.acciones as Acciones,
         detalles: data.detalles,
         precio: data.precio,
@@ -139,7 +155,7 @@ export function CampañaForm({ isOpen, onClose, campaña }: CampañaFormProps) {
       const newCampaña: CampañaPrensa = {
         id: `camp_${Date.now()}`,
         fechaCreacion,
-        clienteId: data.clienteId,
+        clienteId: clienteId,
         acciones: data.acciones as Acciones,
         detalles: data.detalles,
         precio: data.precio,
@@ -153,7 +169,6 @@ export function CampañaForm({ isOpen, onClose, campaña }: CampañaFormProps) {
       addCampaña(newCampaña);
     }
     
-    form.reset();
     onClose();
   };
 
@@ -174,24 +189,13 @@ export function CampañaForm({ isOpen, onClose, campaña }: CampañaFormProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="clienteId"
+                name="clienteNombre"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Cliente</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar cliente" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {clientes.map((cliente) => (
-                          <SelectItem key={cliente.id} value={cliente.id}>
-                            {cliente.nombre}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input placeholder="Nombre del cliente" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -203,7 +207,7 @@ export function CampañaForm({ isOpen, onClose, campaña }: CampañaFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Estado</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue />
@@ -374,7 +378,7 @@ export function CampañaForm({ isOpen, onClose, campaña }: CampañaFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Tipo de Cobro</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue />

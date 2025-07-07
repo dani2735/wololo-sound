@@ -68,7 +68,7 @@ export function FacturaForm({ isOpen, onClose, factura, campaña }: FacturaFormP
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
+    values: {
       fecha: factura?.fecha || new Date().toISOString().split('T')[0],
       clienteId: factura?.clienteId || campaña?.clienteId || "",
       nombrePagador: factura?.nombrePagador || clienteData?.nombrePagador || "",
@@ -159,7 +159,7 @@ export function FacturaForm({ isOpen, onClose, factura, campaña }: FacturaFormP
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Cliente</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccionar cliente" />
@@ -257,7 +257,7 @@ export function FacturaForm({ isOpen, onClose, factura, campaña }: FacturaFormP
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value}
                       className="grid grid-cols-2 md:grid-cols-4 gap-4"
                     >
                       <div className="flex items-center space-x-2">

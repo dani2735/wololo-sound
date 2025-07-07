@@ -7,6 +7,7 @@ import { useAppStore } from "@/stores/useAppStore";
 import { CampañaPrensa } from "@/types";
 import { Plus, Edit, Trash2, Receipt } from "lucide-react";
 import { CampañaForm } from "@/components/forms/CampañaForm";
+import { CampañaDetailsModal } from "@/components/modals/CampañaDetailsModal";
 import { FacturaForm } from "@/components/forms/FacturaForm";
 
 export default function Campanas() {
@@ -15,7 +16,7 @@ export default function Campanas() {
   const [showForm, setShowForm] = useState(false);
   const [editingCampaña, setEditingCampaña] = useState<CampañaPrensa | null>(null);
   const [showFacturaForm, setShowFacturaForm] = useState(false);
-  const [facturaTargetCampaña, setFacturaTargetCampaña] = useState<CampañaPrensa | null>(null);
+  const [facturandoCampaña, setFacturandoCampaña] = useState<CampañaPrensa | null>(null);
 
   const getClienteName = (clienteId: string) => {
     const cliente = clientes.find(c => c.id === clienteId);
@@ -76,13 +77,13 @@ export default function Campanas() {
   };
 
   const handleFacturar = (campaña: CampañaPrensa) => {
-    setFacturaTargetCampaña(campaña);
+    setFacturandoCampaña(campaña);
     setShowFacturaForm(true);
   };
 
   const handleCloseFacturaForm = () => {
     setShowFacturaForm(false);
-    setFacturaTargetCampaña(null);
+    setFacturandoCampaña(null);
   };
 
   return (
@@ -229,93 +230,20 @@ export default function Campanas() {
         </CardContent>
       </Card>
 
-      {/* Campaign Details Modal */}
       {selectedCampaña && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-card rounded-lg shadow-elegant max-w-4xl w-full max-h-[80vh] overflow-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold">Detalles de la Campaña</h2>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSelectedCampaña(null)}
-                >
-                  ✕
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="font-semibold mb-3">Información General</h3>
-                  <div className="space-y-2">
-                    <p><strong>Cliente:</strong> {getClienteName(selectedCampaña.clienteId)}</p>
-                    <p><strong>Fecha Creación:</strong> {new Date(selectedCampaña.fechaCreacion).toLocaleDateString('es-ES')}</p>
-                    <p><strong>Estado:</strong> <Badge variant={getEstadoBadgeVariant(selectedCampaña.estado)}>{selectedCampaña.estado}</Badge></p>
-                    <p><strong>Precio:</strong> {selectedCampaña.precio.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p>
-                    <p><strong>Tipo Cobro:</strong> {selectedCampaña.tipoCobro}</p>
-                    <p><strong>Estado Cobro:</strong> <Badge variant={getCobroBadgeVariant(selectedCampaña.estadoCobro)}>{selectedCampaña.estadoCobro}</Badge></p>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold mb-3">Acciones</h3>
-                  <p className="text-sm">{formatAcciones(selectedCampaña.acciones)}</p>
-                </div>
-              </div>
-
-              {selectedCampaña.detalles && (
-                <div className="mt-4">
-                  <h3 className="font-semibold mb-2">Detalles</h3>
-                  <p className="text-sm text-muted-foreground">{selectedCampaña.detalles}</p>
-                </div>
-              )}
-
-              {selectedCampaña.comentarios && (
-                <div className="mt-4">
-                  <h3 className="font-semibold mb-2">Comentarios</h3>
-                  <p className="text-sm text-muted-foreground">{selectedCampaña.comentarios}</p>
-                </div>
-              )}
-
-              <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
-                {selectedCampaña.tipoCobro.includes("Factura") && selectedCampaña.estadoFacturacion === "Sin facturar" && (
-                  <Button
-                    onClick={() => {
-                      setSelectedCampaña(null);
-                      handleFacturar(selectedCampaña);
-                    }}
-                    className="bg-gradient-primary"
-                  >
-                    <Receipt className="mr-2 h-4 w-4" />
-                    Facturar
-                  </Button>
-                )}
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSelectedCampaña(null);
-                    handleEdit(selectedCampaña);
-                  }}
-                >
-                  <Edit className="mr-2 h-4 w-4" />
-                  Editar
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    handleDelete(selectedCampaña.id);
-                    setSelectedCampaña(null);
-                  }}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Borrar
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <CampañaDetailsModal
+          campaña={selectedCampaña}
+          onClose={() => setSelectedCampaña(null)}
+          onEdit={(campaña) => {
+            setSelectedCampaña(null);
+            handleEdit(campaña);
+          }}
+          onDelete={(id) => {
+            handleDelete(id);
+            setSelectedCampaña(null);
+          }}
+          onFacturar={handleFacturar}
+        />
       )}
 
       <CampañaForm 
@@ -327,7 +255,7 @@ export default function Campanas() {
       <FacturaForm 
         isOpen={showFacturaForm}
         onClose={handleCloseFacturaForm}
-        campaña={facturaTargetCampaña || undefined}
+        campaña={facturandoCampaña || undefined}
       />
     </div>
   );

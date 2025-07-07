@@ -43,6 +43,7 @@ export function FacturaDetailsModal({ factura, onClose, onEdit, onDelete }: Fact
                 <p><strong>Cliente:</strong> {getClienteName(factura.clienteId)}</p>
                 <p><strong>Pagador:</strong> {factura.nombrePagador}</p>
                 <p><strong>NIF:</strong> <span className="font-mono">{factura.nif}</span></p>
+                <p><strong>Dirección:</strong> {factura.direccion}</p>
                 <p><strong>Estado Cobro:</strong> <Badge variant={getEstadoBadgeVariant(factura.estadoCobro)}>{factura.estadoCobro}</Badge></p>
               </div>
             </div>
@@ -57,10 +58,6 @@ export function FacturaDetailsModal({ factura, onClose, onEdit, onDelete }: Fact
             </div>
           </div>
 
-          <div className="mt-4">
-            <h3 className="font-semibold mb-2">Dirección</h3>
-            <p className="text-sm text-muted-foreground">{factura.direccion}</p>
-          </div>
 
           {factura.datosAcciones && (
             <div className="mt-4">

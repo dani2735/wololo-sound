@@ -47,13 +47,13 @@ export function MovimientoForm({ isOpen, onClose, tipo, movimiento }: Movimiento
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
+    values: {
       fecha: movimiento?.fecha || new Date().toISOString().split('T')[0],
       tipo: movimiento?.tipo || tipo,
       pagador: movimiento?.pagador || "",
       clienteId: movimiento?.clienteId || "",
       precio: movimiento?.precio || 0,
-      cuenta: movimiento?.cuenta || "Paypal",
+      cuenta: movimiento?.cuenta || "Cuenta SL",
       detalles: movimiento?.detalles || "",
     },
   });
@@ -126,7 +126,7 @@ export function MovimientoForm({ isOpen, onClose, tipo, movimiento }: Movimiento
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Cliente</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccionar cliente" />
@@ -172,7 +172,7 @@ export function MovimientoForm({ isOpen, onClose, tipo, movimiento }: Movimiento
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Cuenta</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue />
