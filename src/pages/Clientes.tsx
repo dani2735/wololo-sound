@@ -6,6 +6,7 @@ import { useAppStore } from "@/stores/useAppStore";
 import { Cliente } from "@/types";
 import { Plus, Edit, Trash2, Users } from "lucide-react";
 import { ClienteForm } from "@/components/forms/ClienteForm";
+import { ClienteDetailsModal } from "@/components/modals/ClienteDetailsModal";
 
 export default function Clientes() {
   const { clientes, campañas, deleteCliente } = useAppStore();
@@ -103,7 +104,7 @@ export default function Clientes() {
                   <TableRow 
                     key={cliente.id} 
                     className="hover:bg-accent/50 cursor-pointer"
-                    onClick={() => handleEdit(cliente)}
+                    onClick={() => setSelectedCliente(cliente)}
                   >
                     <TableCell className="font-medium">{cliente.nombre}</TableCell>
                     <TableCell>{cliente.nombrePagador}</TableCell>
@@ -139,80 +140,19 @@ export default function Clientes() {
         </CardContent>
       </Card>
 
-      {/* Client Details Modal would go here */}
       {selectedCliente && (
-        <Card className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-card rounded-lg shadow-elegant max-w-2xl w-full max-h-[80vh] overflow-auto">
-            <CardHeader>
-              <CardTitle>Detalles del Cliente: {selectedCliente.nombre}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Nombre</label>
-                  <p className="font-medium">{selectedCliente.nombre}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Nombre Pagador</label>
-                  <p className="font-medium">{selectedCliente.nombrePagador}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">NIF</label>
-                  <p className="font-mono">{selectedCliente.nif}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Dirección</label>
-                  <p>{selectedCliente.direccion}</p>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Campañas Asociadas</h3>
-                <div className="space-y-2">
-                  {campañas
-                    .filter(c => c.clienteId === selectedCliente.id)
-                    .map(campaña => (
-                      <div key={campaña.id} className="flex justify-between items-center p-3 bg-accent/30 rounded-lg">
-                        <div>
-                          <p className="font-medium">
-                            {new Date(campaña.fechaCreacion).toLocaleDateString('es-ES')}
-                          </p>
-                          <p className="text-sm text-muted-foreground">{campaña.detalles}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold">
-                            {campaña.precio.toLocaleString('es-ES', { 
-                              style: 'currency', 
-                              currency: 'EUR' 
-                            })}
-                          </p>
-                          <p className="text-sm text-muted-foreground">{campaña.estado}</p>
-                        </div>
-                      </div>
-                    ))}
-                  
-                  {getCampaignCount(selectedCliente.id) === 0 && (
-                    <p className="text-center text-muted-foreground py-4">
-                      No hay campañas asociadas a este cliente.
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedCliente(null)}
-                >
-                  Cerrar
-                </Button>
-                <Button>
-                  Editar Cliente
-                </Button>
-              </div>
-            </CardContent>
-          </div>
-        </Card>
+        <ClienteDetailsModal
+          cliente={selectedCliente}
+          onClose={() => setSelectedCliente(null)}
+          onEdit={(cliente) => {
+            setSelectedCliente(null);
+            handleEdit(cliente);
+          }}
+          onDelete={(id) => {
+            handleDelete(id);
+            setSelectedCliente(null);
+          }}
+        />
       )}
 
       <ClienteForm 
