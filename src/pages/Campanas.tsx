@@ -419,7 +419,7 @@ export default function Campanas() {
 
       {selectedCampaña && (
         <CampañaDetailsModal
-          campaña={selectedCampaña}
+          campaña={campañas.find(c => c.id === selectedCampaña.id) || selectedCampaña}
           onClose={() => setSelectedCampaña(null)}
           onEdit={(campaña) => {
             setSelectedCampaña(null);
