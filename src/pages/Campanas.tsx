@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAppStore } from "@/stores/useAppStore";
 import { CampañaPrensa } from "@/types";
-import { Plus, Edit, Trash2, Receipt } from "lucide-react";
+import { Plus, Edit, Trash2, Receipt, CheckSquare } from "lucide-react";
 import { CampañaForm } from "@/components/forms/CampañaForm";
 import { CampañaDetailsModal } from "@/components/modals/CampañaDetailsModal";
 import { FacturaForm } from "@/components/forms/FacturaForm";
@@ -17,6 +18,8 @@ export default function Campanas() {
   const [editingCampaña, setEditingCampaña] = useState<CampañaPrensa | null>(null);
   const [showFacturaForm, setShowFacturaForm] = useState(false);
   const [facturandoCampaña, setFacturandoCampaña] = useState<CampañaPrensa | null>(null);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
   const getClienteName = (clienteId: string) => {
     const cliente = clientes.find(c => c.id === clienteId);
@@ -86,6 +89,37 @@ export default function Campanas() {
     setFacturandoCampaña(null);
   };
 
+  const toggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+    setSelectedItems([]);
+  };
+
+  const handleSelectItem = (id: string) => {
+    setSelectedItems(prev => 
+      prev.includes(id) 
+        ? prev.filter(item => item !== id)
+        : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedItems.length === campañas.length) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(campañas.map(c => c.id));
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedItems.length === 0) return;
+    
+    if (confirm(`¿Estás seguro de que quieres borrar ${selectedItems.length} campañas?`)) {
+      selectedItems.forEach(id => deleteCampaña(id));
+      setSelectedItems([]);
+      setSelectionMode(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -97,13 +131,34 @@ export default function Campanas() {
           </p>
         </div>
         
-        <Button 
-          className="bg-gradient-primary shadow-elegant hover:shadow-hover"
-          onClick={() => setShowForm(true)}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Nueva Campaña
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            className="shadow-card"
+            onClick={toggleSelectionMode}
+          >
+            <CheckSquare className="mr-2 h-4 w-4" />
+            {selectionMode ? "Cancelar" : "Seleccionar"}
+          </Button>
+          
+          {selectionMode && selectedItems.length > 0 && (
+            <Button 
+              variant="destructive"
+              onClick={handleDeleteSelected}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Borrar ({selectedItems.length})
+            </Button>
+          )}
+          
+          <Button 
+            className="bg-gradient-primary shadow-elegant hover:shadow-hover"
+            onClick={() => setShowForm(true)}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Nueva Campaña
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Cards */}
@@ -172,6 +227,14 @@ export default function Campanas() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  {selectionMode && (
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectedItems.length === campañas.length && campañas.length > 0}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
+                  )}
                   <TableHead>Fecha Creación</TableHead>
                   <TableHead>Cliente</TableHead>
                   <TableHead>Acciones</TableHead>
@@ -186,8 +249,23 @@ export default function Campanas() {
                   <TableRow 
                     key={campaña.id} 
                     className="hover:bg-accent/50 cursor-pointer"
-                    onClick={() => setSelectedCampaña(campaña)}
+                    onClick={(e) => {
+                      if (selectionMode) {
+                        e.stopPropagation();
+                        handleSelectItem(campaña.id);
+                      } else {
+                        setSelectedCampaña(campaña);
+                      }
+                    }}
                   >
+                    {selectionMode && (
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedItems.includes(campaña.id)}
+                          onCheckedChange={() => handleSelectItem(campaña.id)}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell>
                       {new Date(campaña.fechaCreacion).toLocaleDateString('es-ES')}
                     </TableCell>

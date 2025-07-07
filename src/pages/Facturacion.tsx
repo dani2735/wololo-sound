@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAppStore } from "@/stores/useAppStore";
 import { Factura } from "@/types";
-import { Plus, Edit, Trash2, FileText, Euro } from "lucide-react";
+import { Plus, Edit, Trash2, FileText, Euro, CheckSquare } from "lucide-react";
 import { FacturaForm } from "@/components/forms/FacturaForm";
 import { FacturaDetailsModal } from "@/components/modals/FacturaDetailsModal";
 
@@ -16,6 +17,8 @@ export default function Facturacion() {
   const [filtroEstado, setFiltroEstado] = useState<string>("todas");
   const [showForm, setShowForm] = useState(false);
   const [editingFactura, setEditingFactura] = useState<Factura | null>(null);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
   const filteredFacturas = facturas.filter(factura => {
     if (filtroEstado === "cobradas") return factura.estadoCobro === "Cobrado";
@@ -48,6 +51,37 @@ export default function Facturacion() {
     setEditingFactura(null);
   };
 
+  const toggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+    setSelectedItems([]);
+  };
+
+  const handleSelectItem = (id: string) => {
+    setSelectedItems(prev => 
+      prev.includes(id) 
+        ? prev.filter(item => item !== id)
+        : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedItems.length === filteredFacturas.length) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(filteredFacturas.map(f => f.id));
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedItems.length === 0) return;
+    
+    if (confirm(`¿Estás seguro de que quieres borrar ${selectedItems.length} facturas?`)) {
+      selectedItems.forEach(id => deleteFactura(id));
+      setSelectedItems([]);
+      setSelectionMode(false);
+    }
+  };
+
   // Calculate totals
   const totalFacturado = filteredFacturas.reduce((acc, f) => acc + f.precio + f.iva, 0);
   const totalCobrado = filteredFacturas
@@ -68,13 +102,34 @@ export default function Facturacion() {
           </p>
         </div>
         
-        <Button 
-          className="bg-gradient-primary shadow-elegant hover:shadow-hover"
-          onClick={() => setShowForm(true)}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Nueva Factura
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            className="shadow-card"
+            onClick={toggleSelectionMode}
+          >
+            <CheckSquare className="mr-2 h-4 w-4" />
+            {selectionMode ? "Cancelar" : "Seleccionar"}
+          </Button>
+          
+          {selectionMode && selectedItems.length > 0 && (
+            <Button 
+              variant="destructive"
+              onClick={handleDeleteSelected}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Borrar ({selectedItems.length})
+            </Button>
+          )}
+          
+          <Button 
+            className="bg-gradient-primary shadow-elegant hover:shadow-hover"
+            onClick={() => setShowForm(true)}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Nueva Factura
+          </Button>
+        </div>
       </div>
 
       {/* Filter and Stats */}
@@ -161,6 +216,14 @@ export default function Facturacion() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  {selectionMode && (
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectedItems.length === filteredFacturas.length && filteredFacturas.length > 0}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
+                  )}
                   <TableHead>Fecha Facturación</TableHead>
                   <TableHead>Referencia</TableHead>
                   <TableHead>Pagador</TableHead>
@@ -170,7 +233,6 @@ export default function Facturacion() {
                   <TableHead>IVA</TableHead>
                   <TableHead>Total</TableHead>
                   <TableHead>Estado Cobro</TableHead>
-                  
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -178,8 +240,23 @@ export default function Facturacion() {
                   <TableRow 
                     key={factura.id} 
                     className="hover:bg-accent/50 cursor-pointer"
-                    onClick={() => setSelectedFactura(factura)}
+                    onClick={(e) => {
+                      if (selectionMode) {
+                        e.stopPropagation();
+                        handleSelectItem(factura.id);
+                      } else {
+                        setSelectedFactura(factura);
+                      }
+                    }}
                   >
+                    {selectionMode && (
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedItems.includes(factura.id)}
+                          onCheckedChange={() => handleSelectItem(factura.id)}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell>
                       {new Date(factura.fecha).toLocaleDateString('es-ES')}
                     </TableCell>

@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAppStore } from "@/stores/useAppStore";
 import { Cliente } from "@/types";
-import { Plus, Edit, Trash2, Users } from "lucide-react";
+import { Plus, Edit, Trash2, Users, CheckSquare } from "lucide-react";
 import { ClienteForm } from "@/components/forms/ClienteForm";
 import { ClienteDetailsModal } from "@/components/modals/ClienteDetailsModal";
 
@@ -13,6 +14,8 @@ export default function Clientes() {
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
   const getCampaignCount = (clienteId: string) => {
     return campañas.filter(c => c.clienteId === clienteId).length;
@@ -46,6 +49,43 @@ export default function Clientes() {
     setEditingCliente(null);
   };
 
+  const toggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+    setSelectedItems([]);
+  };
+
+  const handleSelectItem = (id: string) => {
+    setSelectedItems(prev => 
+      prev.includes(id) 
+        ? prev.filter(item => item !== id)
+        : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedItems.length === clientes.length) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(clientes.map(c => c.id));
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedItems.length === 0) return;
+    
+    const clientsWithCampaigns = selectedItems.filter(id => getCampaignCount(id) > 0);
+    if (clientsWithCampaigns.length > 0) {
+      alert(`No se pueden borrar algunos clientes porque tienen campañas asociadas.`);
+      return;
+    }
+    
+    if (confirm(`¿Estás seguro de que quieres borrar ${selectedItems.length} clientes?`)) {
+      selectedItems.forEach(id => deleteCliente(id));
+      setSelectedItems([]);
+      setSelectionMode(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -57,13 +97,34 @@ export default function Clientes() {
           </p>
         </div>
         
-        <Button 
-          className="bg-gradient-primary shadow-elegant hover:shadow-hover"
-          onClick={() => setShowForm(true)}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Nuevo Cliente
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            className="shadow-card"
+            onClick={toggleSelectionMode}
+          >
+            <CheckSquare className="mr-2 h-4 w-4" />
+            {selectionMode ? "Cancelar" : "Seleccionar"}
+          </Button>
+          
+          {selectionMode && selectedItems.length > 0 && (
+            <Button 
+              variant="destructive"
+              onClick={handleDeleteSelected}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Borrar ({selectedItems.length})
+            </Button>
+          )}
+          
+          <Button 
+            className="bg-gradient-primary shadow-elegant hover:shadow-hover"
+            onClick={() => setShowForm(true)}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Nuevo Cliente
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Card */}
@@ -90,13 +151,20 @@ export default function Clientes() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  {selectionMode && (
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectedItems.length === clientes.length && clientes.length > 0}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
+                  )}
                   <TableHead>Cliente</TableHead>
                   <TableHead>Nombre Pagador</TableHead>
                   <TableHead>NIF</TableHead>
                   <TableHead>Dirección</TableHead>
                   <TableHead>Campañas</TableHead>
                   <TableHead>Total Facturado</TableHead>
-                  
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -104,8 +172,23 @@ export default function Clientes() {
                   <TableRow 
                     key={cliente.id} 
                     className="hover:bg-accent/50 cursor-pointer"
-                    onClick={() => setSelectedCliente(cliente)}
+                    onClick={(e) => {
+                      if (selectionMode) {
+                        e.stopPropagation();
+                        handleSelectItem(cliente.id);
+                      } else {
+                        setSelectedCliente(cliente);
+                      }
+                    }}
                   >
+                    {selectionMode && (
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedItems.includes(cliente.id)}
+                          onCheckedChange={() => handleSelectItem(cliente.id)}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell className="font-medium">{cliente.nombre}</TableCell>
                     <TableCell>{cliente.nombrePagador}</TableCell>
                     <TableCell className="font-mono">{cliente.nif}</TableCell>
