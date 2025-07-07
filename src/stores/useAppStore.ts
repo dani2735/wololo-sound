@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { CampañaPrensa, Cliente, Factura, MovimientoContable, DashboardData } from '@/types';
+import { CampañaPrensa, Cliente, Factura, MovimientoContable, DashboardData, EstadoCobro } from '@/types';
 import { sampleClientes, sampleCampañas, sampleFacturas, sampleMovimientos } from '@/data/sampleData';
 
 interface AppStore {
@@ -28,6 +28,7 @@ interface AppStore {
   addFactura: (factura: Factura) => void;
   updateFactura: (id: string, factura: Partial<Factura>) => void;
   deleteFactura: (id: string) => void;
+  marcarFacturaCobrada: (facturaId: string, cuentaCobro: 'Paypal' | 'Cuenta SL') => void;
   
   // Actions - Movimientos
   addMovimiento: (movimiento: MovimientoContable) => void;
@@ -83,6 +84,48 @@ export const useAppStore = create<AppStore>()(
       deleteFactura: (id) => set(state => ({
         facturas: state.facturas.filter(f => f.id !== id)
       })),
+      marcarFacturaCobrada: (facturaId, cuentaCobro) => set(state => {
+        const factura = state.facturas.find(f => f.id === facturaId);
+        if (!factura) return state;
+
+        const cliente = state.clientes.find(c => c.id === factura.clienteId);
+        const fechaCobro = new Date().toISOString().split('T')[0];
+
+        // Crear movimiento de cobro
+        const nuevoMovimiento: MovimientoContable = {
+          id: `mov_${Date.now()}`,
+          fecha: fechaCobro,
+          tipo: 'cobro',
+          pagador: factura.nombrePagador,
+          clienteId: factura.clienteId,
+          precio: factura.precio + factura.iva,
+          cuenta: cuentaCobro,
+          referenciaFactura: factura.referencia,
+          detalles: `Cobro de factura ${factura.referencia}`,
+        };
+
+        // Actualizar factura
+        const facturasActualizadas = state.facturas.map(f => 
+          f.id === facturaId 
+            ? { ...f, estadoCobro: 'Cobrado' as EstadoCobro, fechaCobro }
+            : f
+        );
+
+        // Actualizar campaña si existe una asociada
+        const campañasActualizadas = state.campañas.map(c => {
+          if (c.referenciaFactura === factura.referencia) {
+            return { ...c, estadoCobro: 'Cobrado' as EstadoCobro, fechaCobro };
+          }
+          return c;
+        });
+
+        return {
+          ...state,
+          facturas: facturasActualizadas,
+          movimientos: [...state.movimientos, nuevoMovimiento],
+          campañas: campañasActualizadas,
+        };
+      }),
       
       // Movimientos actions
       addMovimiento: (movimiento) => set(state => ({ 

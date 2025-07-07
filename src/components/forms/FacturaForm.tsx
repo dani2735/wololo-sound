@@ -46,7 +46,7 @@ interface FacturaFormProps {
 }
 
 export function FacturaForm({ isOpen, onClose, factura, campaña }: FacturaFormProps) {
-  const { clientes, facturas, addFactura, updateFactura } = useAppStore();
+  const { clientes, facturas, addFactura, updateFactura, updateCampaña } = useAppStore();
   const isEditing = !!factura;
 
   // Generate next invoice reference
@@ -106,10 +106,11 @@ export function FacturaForm({ isOpen, onClose, factura, campaña }: FacturaFormP
         iva: ivaCalculado,
       });
     } else {
+      const referencia = getNextReference();
       const newFactura: Factura = {
         id: `fact_${Date.now()}`,
         fecha: data.fecha,
-        referencia: getNextReference(),
+        referencia,
         clienteId: data.clienteId,
         nombrePagador: data.nombrePagador,
         nif: data.nif,
@@ -121,6 +122,15 @@ export function FacturaForm({ isOpen, onClose, factura, campaña }: FacturaFormP
         datosAcciones: data.datosAcciones,
       };
       addFactura(newFactura);
+
+      // Si se está facturando desde una campaña, actualizar su estado
+      if (campaña) {
+        updateCampaña(campaña.id, {
+          estadoFacturacion: "Facturado",
+          fechaFacturacion: data.fecha,
+          referenciaFactura: referencia,
+        });
+      }
     }
     
     form.reset();

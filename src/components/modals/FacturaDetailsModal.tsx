@@ -1,8 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Edit, Trash2 } from "lucide-react";
-import { Factura } from "@/types";
+import { Factura, CuentaMovimiento } from "@/types";
 import { useAppStore } from "@/stores/useAppStore";
+import { useState } from "react";
 
 interface FacturaDetailsModalProps {
   factura: Factura;
@@ -12,7 +14,8 @@ interface FacturaDetailsModalProps {
 }
 
 export function FacturaDetailsModal({ factura, onClose, onEdit, onDelete }: FacturaDetailsModalProps) {
-  const { clientes } = useAppStore();
+  const { clientes, marcarFacturaCobrada } = useAppStore();
+  const [cuentaCobro, setCuentaCobro] = useState<CuentaMovimiento>("Cuenta SL");
 
   const getClienteName = (clienteId: string) => {
     const cliente = clientes.find(c => c.id === clienteId);
@@ -45,6 +48,9 @@ export function FacturaDetailsModal({ factura, onClose, onEdit, onDelete }: Fact
                 <p><strong>NIF:</strong> <span className="font-mono">{factura.nif}</span></p>
                 <p><strong>Dirección:</strong> {factura.direccion}</p>
                 <p><strong>Estado Cobro:</strong> <Badge variant={getEstadoBadgeVariant(factura.estadoCobro)}>{factura.estadoCobro}</Badge></p>
+                {factura.fechaCobro && (
+                  <p><strong>Fecha Cobro:</strong> {new Date(factura.fechaCobro).toLocaleDateString('es-ES')}</p>
+                )}
               </div>
             </div>
 
@@ -58,7 +64,6 @@ export function FacturaDetailsModal({ factura, onClose, onEdit, onDelete }: Fact
             </div>
           </div>
 
-
           {factura.datosAcciones && (
             <div className="mt-4">
               <h3 className="font-semibold mb-2">Datos de Acciones</h3>
@@ -66,12 +71,33 @@ export function FacturaDetailsModal({ factura, onClose, onEdit, onDelete }: Fact
             </div>
           )}
 
+          {factura.estadoCobro === "Sin cobrar" && (
+            <div className="mt-4 p-4 bg-accent/30 rounded-lg">
+              <h3 className="font-semibold mb-3">Marcar como Cobrada</h3>
+              <div className="flex items-center gap-3">
+                <Select value={cuentaCobro} onValueChange={(value: CuentaMovimiento) => setCuentaCobro(value)}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Cuenta SL">Cuenta SL</SelectItem>
+                    <SelectItem value="Paypal">Paypal</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button 
+                  className="bg-gradient-primary"
+                  onClick={() => {
+                    marcarFacturaCobrada(factura.id, cuentaCobro);
+                    onClose();
+                  }}
+                >
+                  Marcar como Cobrada
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
-            {factura.estadoCobro === "Sin cobrar" && (
-              <Button className="bg-gradient-primary">
-                Marcar como Cobrada
-              </Button>
-            )}
             <Button variant="outline" onClick={() => onEdit(factura)}>
               <Edit className="mr-2 h-4 w-4" />
               Editar

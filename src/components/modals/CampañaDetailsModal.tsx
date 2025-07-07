@@ -120,8 +120,18 @@ export function CampañaDetailsModal({ campaña, onClose, onEdit, onDelete, onFa
             </div>
           )}
 
+          {campaña.estadoFacturacion === "Facturado" && (
+            <div className="mt-4 p-4 bg-accent/30 rounded-lg">
+              <h3 className="font-semibold mb-2">Información de Facturación</h3>
+              <div className="space-y-1 text-sm">
+                <p><strong>Referencia:</strong> <span className="font-mono">{campaña.referenciaFactura}</span></p>
+                <p><strong>Fecha Facturación:</strong> {campaña.fechaFacturacion ? new Date(campaña.fechaFacturacion).toLocaleDateString('es-ES') : 'No disponible'}</p>
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
-            {campaña.estadoFacturacion === "Sin facturar" && (
+            {campaña.estadoFacturacion === "Sin facturar" && campaña.tipoCobro.includes("Factura") && (
               <Button 
                 className="bg-gradient-primary"
                 onClick={() => onFacturar(campaña)}
