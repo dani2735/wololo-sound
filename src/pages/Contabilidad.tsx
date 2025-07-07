@@ -18,6 +18,8 @@ export default function Contabilidad() {
   const [showForm, setShowForm] = useState(false);
   const [editingMovimiento, setEditingMovimiento] = useState<MovimientoContable | null>(null);
   const [formTipo, setFormTipo] = useState<TipoMovimiento>("cobro");
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
   // Determine which account to show based on route
   const isShowingAll = location.pathname === "/contabilidad";
@@ -70,6 +72,37 @@ export default function Contabilidad() {
     setEditingMovimiento(null);
   };
 
+  const toggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+    setSelectedItems([]);
+  };
+
+  const handleSelectItem = (id: string) => {
+    setSelectedItems(prev => 
+      prev.includes(id) 
+        ? prev.filter(item => item !== id)
+        : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedItems.length === filteredMovimientos.length) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(filteredMovimientos.map(m => m.id));
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedItems.length === 0) return;
+    
+    if (confirm(`¿Estás seguro de que quieres borrar ${selectedItems.length} movimientos?`)) {
+      selectedItems.forEach(id => deleteMovimiento(id));
+      setSelectedItems([]);
+      setSelectionMode(false);
+    }
+  };
+
   // Calculate totals
   const totalCobros = filteredMovimientos
     .filter(m => m.tipo === "cobro")
@@ -99,6 +132,25 @@ export default function Contabilidad() {
         </div>
         
         <div className="flex flex-col sm:flex-row gap-2">
+          <Button 
+            variant="outline"
+            className="shadow-card"
+            onClick={toggleSelectionMode}
+          >
+            <CheckSquare className="mr-2 h-4 w-4" />
+            {selectionMode ? "Cancelar" : "Seleccionar"}
+          </Button>
+          
+          {selectionMode && selectedItems.length > 0 && (
+            <Button 
+              variant="destructive"
+              onClick={handleDeleteSelected}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Borrar ({selectedItems.length})
+            </Button>
+          )}
+          
           <Button 
             variant="outline" 
             className="shadow-card"
@@ -179,13 +231,20 @@ export default function Contabilidad() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  {selectionMode && (
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectedItems.length === filteredMovimientos.length && filteredMovimientos.length > 0}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
+                  )}
                   <TableHead>Fecha</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Pagador</TableHead>
                   <TableHead>Cliente</TableHead>
                   <TableHead>Precio</TableHead>
                   {isShowingAll && <TableHead>Cuenta</TableHead>}
-                  
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -193,8 +252,23 @@ export default function Contabilidad() {
                   <TableRow 
                     key={movimiento.id} 
                     className="hover:bg-accent/50 cursor-pointer"
-                    onClick={() => setSelectedMovimiento(movimiento)}
+                    onClick={(e) => {
+                      if (selectionMode) {
+                        e.stopPropagation();
+                        handleSelectItem(movimiento.id);
+                      } else {
+                        setSelectedMovimiento(movimiento);
+                      }
+                    }}
                   >
+                    {selectionMode && (
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedItems.includes(movimiento.id)}
+                          onCheckedChange={() => handleSelectItem(movimiento.id)}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell>
                       {new Date(movimiento.fecha).toLocaleDateString('es-ES')}
                     </TableCell>
