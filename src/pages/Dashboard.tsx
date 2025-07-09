@@ -148,15 +148,35 @@ export default function Dashboard() {
                   size="sm"
                   onClick={() => {
                     // Set to show all data by selecting all available years and months
-                    const allYears = [...new Set(campañas.map(c => new Date(c.fechaCreacion).getFullYear()))];
-                    const allMonths = [...Array(12)].map((_, i) => i + 1);
-                    // For simplicity, we'll use a special value to indicate "all"
                     setMesSeleccionado(0); // 0 means all months
                     setAñoSeleccionado(0); // 0 means all years
                   }}
                   className={mesSeleccionado === 0 && añoSeleccionado === 0 ? "bg-gradient-primary shadow-elegant" : ""}
                 >
-                  Ver Todo
+                  Histórico
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const now = new Date();
+                    setMesSeleccionado(now.getMonth() + 1);
+                    setAñoSeleccionado(now.getFullYear());
+                  }}
+                  className={mesSeleccionado === new Date().getMonth() + 1 && añoSeleccionado === new Date().getFullYear() ? "bg-gradient-primary shadow-elegant" : ""}
+                >
+                  Mes Actual
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setMesSeleccionado(0); // 0 means all months of the year
+                    setAñoSeleccionado(new Date().getFullYear());
+                  }}
+                  className={mesSeleccionado === 0 && añoSeleccionado === new Date().getFullYear() ? "bg-gradient-primary shadow-elegant" : ""}
+                >
+                  Año Actual
                 </Button>
               <Select 
                 value={añoSeleccionado.toString()} 
@@ -245,19 +265,6 @@ export default function Dashboard() {
                </div>
             </div>
             
-            <div className="flex justify-center mt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setMesSeleccionado(0); // 0 means all months
-                  setAñoSeleccionado(0); // 0 means all years
-                }}
-                className={mesSeleccionado === 0 && añoSeleccionado === 0 ? "bg-gradient-primary shadow-elegant" : ""}
-              >
-                Ver Todo Histórico
-              </Button>
-            </div>
         </CardContent>
       </Card>
     </div>
