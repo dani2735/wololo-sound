@@ -120,23 +120,6 @@ export default function Dashboard() {
          <Card className="bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover">
            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
              <CardTitle className="text-sm font-medium text-muted-foreground">
-               Total Cobrado Histórico
-             </CardTitle>
-             <TrendingUp className="h-4 w-4 text-success" />
-           </CardHeader>
-           <CardContent>
-             <div className="text-2xl font-bold text-success">
-               {dashboardData.totalCobradoHistorico.toLocaleString('es-ES', { 
-                 style: 'currency', 
-                 currency: 'EUR' 
-               })}
-             </div>
-           </CardContent>
-         </Card>
-
-         <Card className="bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover">
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-             <CardTitle className="text-sm font-medium text-muted-foreground">
                Cuenta SL
              </CardTitle>
              <Euro className="h-4 w-4 text-muted-foreground" />
@@ -150,15 +133,47 @@ export default function Dashboard() {
              </div>
            </CardContent>
          </Card>
+
+         <Card className="bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover">
+           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+             <CardTitle className="text-sm font-medium text-muted-foreground">
+               Cuenta Paypal
+             </CardTitle>
+             <Euro className="h-4 w-4 text-muted-foreground" />
+           </CardHeader>
+           <CardContent>
+             <div className="text-2xl font-bold text-foreground">
+               {dashboardData.cuentaPaypal.toLocaleString('es-ES', { 
+                 style: 'currency', 
+                 currency: 'EUR' 
+               })}
+             </div>
+           </CardContent>
+         </Card>
        </div>
 
       {/* Monthly Data Section */}
       <Card className="bg-gradient-card shadow-card border-0">
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <CardTitle className="text-xl font-semibold">Datos Mensuales</CardTitle>
-            
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <CardTitle className="text-xl font-semibold">Datos Mensuales</CardTitle>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    // Set to show all data by selecting all available years and months
+                    const allYears = [...new Set(campañas.map(c => new Date(c.fechaCreacion).getFullYear()))];
+                    const allMonths = [...Array(12)].map((_, i) => i + 1);
+                    // For simplicity, we'll use a special value to indicate "all"
+                    setMesSeleccionado(0); // 0 means all months
+                    setAñoSeleccionado(0); // 0 means all years
+                  }}
+                  className={mesSeleccionado === 0 && añoSeleccionado === 0 ? "bg-gradient-primary shadow-elegant" : ""}
+                >
+                  Ver Todo
+                </Button>
               <Select 
                 value={añoSeleccionado.toString()} 
                 onValueChange={(value) => setAñoSeleccionado(Number(value))}
@@ -231,12 +246,19 @@ export default function Dashboard() {
                <div className="text-sm text-muted-foreground mt-1">Total Pagado</div>
              </div>
              
-             <div className="text-center p-4 rounded-lg bg-accent/30">
-               <div className="text-2xl font-bold text-foreground">
-                 {dashboardData.mesSeleccionado.numeroFacturas}
-               </div>
-               <div className="text-sm text-muted-foreground mt-1">Número Facturas</div>
-             </div>
+              <div className="text-center p-4 rounded-lg bg-accent/30">
+                <div className="text-2xl font-bold text-foreground">
+                  {dashboardData.mesSeleccionado.numeroFacturas}
+                </div>
+                <div className="text-sm text-muted-foreground mt-1">Número Facturas</div>
+              </div>
+              
+              <div className="text-center p-4 rounded-lg bg-accent/30">
+                <div className="text-2xl font-bold text-foreground">
+                  {dashboardData.mesSeleccionado.numeroAcciones}
+                </div>
+                <div className="text-sm text-muted-foreground mt-1">Acciones Registradas</div>
+              </div>
            </div>
         </CardContent>
       </Card>

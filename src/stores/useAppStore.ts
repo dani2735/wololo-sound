@@ -161,15 +161,19 @@ export const useAppStore = create<AppStore>()(
           .reduce((acc, f) => acc + f.precio + f.iva, 0);
         
         // Calculate monthly data
-        const monthlyFacturas = facturas.filter(f => {
-          const date = new Date(f.fecha);
-          return date.getMonth() + 1 === mesSeleccionado && date.getFullYear() === añoSeleccionado;
-        });
+        const monthlyFacturas = mesSeleccionado === 0 && añoSeleccionado === 0 
+          ? facturas // Show all if both are 0
+          : facturas.filter(f => {
+              const date = new Date(f.fecha);
+              return date.getMonth() + 1 === mesSeleccionado && date.getFullYear() === añoSeleccionado;
+            });
         
-        const monthlyMovimientos = movimientos.filter(m => {
-          const date = new Date(m.fecha);
-          return date.getMonth() + 1 === mesSeleccionado && date.getFullYear() === añoSeleccionado;
-        });
+        const monthlyMovimientos = mesSeleccionado === 0 && añoSeleccionado === 0
+          ? movimientos // Show all if both are 0
+          : movimientos.filter(m => {
+              const date = new Date(m.fecha);
+              return date.getMonth() + 1 === mesSeleccionado && date.getFullYear() === añoSeleccionado;
+            });
         
         const totalFacturado = monthlyFacturas.reduce((acc, f) => acc + f.precio + f.iva, 0);
         const totalCobradoSL = monthlyMovimientos
@@ -179,10 +183,21 @@ export const useAppStore = create<AppStore>()(
           .filter(m => m.tipo === 'cobro' && m.cuenta === 'Paypal')
           .reduce((acc, m) => acc + m.precio, 0);
         
-        const numeroAcciones = state.campañas.filter(c => {
-          const date = new Date(c.fechaCreacion);
-          return date.getMonth() + 1 === mesSeleccionado && date.getFullYear() === añoSeleccionado;
-        }).length;
+        const monthlyCampañas = mesSeleccionado === 0 && añoSeleccionado === 0
+          ? state.campañas // Show all if both are 0
+          : state.campañas.filter(c => {
+              const date = new Date(c.fechaCreacion);
+              return date.getMonth() + 1 === mesSeleccionado && date.getFullYear() === añoSeleccionado;
+            });
+            
+        const numeroAcciones = monthlyCampañas.reduce((acc, c) => {
+          const acciones = c.acciones;
+          return acc + 
+            acciones.instagramPost + acciones.instagramFlyer + acciones.instagramVideo +
+            acciones.instagramVideoAna + acciones.instagramAgendaMadrid + acciones.instagramAgendaIbiza +
+            acciones.webArticulo + acciones.webEntrevista + acciones.webAgenda +
+            acciones.podcastMencion + acciones.podcastEntrevista + acciones.youtubeEntrevista;
+        }, 0);
         
         // Calculate additional metrics
         const totalPendienteFacturar = state.campañas

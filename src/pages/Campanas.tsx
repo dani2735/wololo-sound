@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SortableTable } from "@/components/ui/sortable-table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAppStore } from "@/stores/useAppStore";
 import { CampañaPrensa } from "@/types";
@@ -22,6 +23,9 @@ export default function Campanas() {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [sortField, setSortField] = useState<string>("");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [columnOrder, setColumnOrder] = useState<string[]>([
+    'fecha', 'cliente', 'detalles', 'estado', 'tipoCobro', 'precio', 'estadoFacturacion'
+  ]);
   const [filtroEstado, setFiltroEstado] = useState<string>("");
 
   const getClienteName = (clienteId: string) => {

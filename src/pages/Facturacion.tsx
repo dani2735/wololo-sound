@@ -22,6 +22,8 @@ export default function Facturacion() {
   const [sortField, setSortField] = useState<string>("");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
+  const [baseFacturas] = useState(facturas); // Keep original list for stats
+  
   const filteredFacturas = facturas.filter(factura => {
     if (filtroEstado === "cobradas") return factura.estadoCobro === "Cobrado";
     if (filtroEstado === "pendientes") return factura.estadoCobro === "Sin cobrar";
@@ -122,14 +124,10 @@ export default function Facturacion() {
     return 0;
   });
 
-  // Calculate totals
-  const totalFacturado = filteredFacturas.reduce((acc, f) => acc + f.precio + f.iva, 0);
-  const totalCobrado = filteredFacturas
-    .filter(f => f.estadoCobro === "Cobrado")
-    .reduce((acc, f) => acc + f.precio + f.iva, 0);
-  const totalPendiente = filteredFacturas
-    .filter(f => f.estadoCobro === "Sin cobrar")
-    .reduce((acc, f) => acc + f.precio + f.iva, 0);
+  // Cálculos para las tarjetas de resumen (always use all invoices)
+  const totalFacturado = baseFacturas.reduce((acc, factura) => acc + factura.precio + factura.iva, 0);
+  const totalCobrado = baseFacturas.filter(f => f.estadoCobro === "Cobrado").reduce((acc, factura) => acc + factura.precio + factura.iva, 0);
+  const pendienteCobro = baseFacturas.filter(f => f.estadoCobro === "Sin cobrar").reduce((acc, factura) => acc + factura.precio + factura.iva, 0);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -243,7 +241,7 @@ export default function Facturacion() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-warning">
-              {totalPendiente.toLocaleString('es-ES', { 
+              {pendienteCobro.toLocaleString('es-ES', { 
                 style: 'currency', 
                 currency: 'EUR' 
               })}

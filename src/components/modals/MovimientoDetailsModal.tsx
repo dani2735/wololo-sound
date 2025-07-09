@@ -66,29 +66,29 @@ export function MovimientoDetailsModal({ movimiento, onClose, onEdit, onDelete }
                  {movimiento.referenciaFactura && (
                    <p><strong>Referencia Factura:</strong> <span className="font-mono">{movimiento.referenciaFactura}</span></p>
                  )}
-                 <p><strong>Precio:</strong> {(() => {
-                   // Get price from related campaña if available
-                   const { campañas } = useAppStore.getState();
-                   const relacionCampaña = campañas.find(c => c.referenciaFactura === movimiento.referenciaFactura);
-                   const precioBase = relacionCampaña?.precio || movimiento.precio;
-                   return precioBase.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
-                 })()}</p>
-                 <p><strong>IVA:</strong> {(() => {
-                   const { campañas } = useAppStore.getState();
-                   const relacionCampaña = campañas.find(c => c.referenciaFactura === movimiento.referenciaFactura);
-                   const iva = relacionCampaña?.iva || 0;
-                   return iva.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
-                 })()}</p>
-                 <p className={`text-lg font-bold ${movimiento.tipo === 'cobro' ? 'text-success' : 'text-destructive'}`}>
-                   <strong>Total:</strong> {movimiento.tipo === 'cobro' ? '+' : '-'}
-                   {(() => {
-                     const { campañas } = useAppStore.getState();
-                     const relacionCampaña = campañas.find(c => c.referenciaFactura === movimiento.referenciaFactura);
-                     const precioBase = relacionCampaña?.precio || movimiento.precio;
-                     const iva = relacionCampaña?.iva || 0;
-                     return (precioBase + iva).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
-                   })()}
-                 </p>
+                  <p><strong>Precio:</strong> {(() => {
+                    // Get price from related invoice if available
+                    const { facturas } = useAppStore.getState();
+                    const relacionFactura = facturas.find(f => f.referencia === movimiento.referenciaFactura);
+                    const precioBase = relacionFactura?.precio || movimiento.precio;
+                    return precioBase.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+                  })()}</p>
+                  <p><strong>IVA:</strong> {(() => {
+                    const { facturas } = useAppStore.getState();
+                    const relacionFactura = facturas.find(f => f.referencia === movimiento.referenciaFactura);
+                    const iva = relacionFactura?.iva || 0;
+                    return iva.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+                  })()}</p>
+                  <p className={`text-lg font-bold ${movimiento.tipo === 'cobro' ? 'text-success' : 'text-destructive'}`}>
+                    <strong>Total:</strong> {movimiento.tipo === 'cobro' ? '+' : '-'}
+                    {(() => {
+                      const { facturas } = useAppStore.getState();
+                      const relacionFactura = facturas.find(f => f.referencia === movimiento.referenciaFactura);
+                      const precioBase = relacionFactura?.precio || movimiento.precio;
+                      const iva = relacionFactura?.iva || 0;
+                      return (precioBase + iva).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+                    })()}
+                  </p>
                </div>
              </div>
           </div>

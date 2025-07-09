@@ -122,9 +122,23 @@ export function CampañaDetailsModal({ campaña, onClose, onEdit, onDelete, onFa
               <div className="space-y-1 text-sm">
                 <p><strong>Referencia:</strong> <span className="font-mono">{campaña.referenciaFactura}</span></p>
                 <p><strong>Fecha Facturación:</strong> {campaña.fechaFacturacion ? new Date(campaña.fechaFacturacion).toLocaleDateString('es-ES') : 'No disponible'}</p>
-                <p><strong>Nombre Pagador:</strong> {campaña.nombrePagador}</p>
-                <p><strong>CIF:</strong> {campaña.nif}</p>
-                <p><strong>Dirección:</strong> {campaña.direccion}</p>
+                {(() => {
+                  const { facturas } = useAppStore.getState();
+                  const factura = facturas.find(f => f.referencia === campaña.referenciaFactura);
+                  return factura ? (
+                    <>
+                      <p><strong>Nombre Pagador:</strong> {factura.nombrePagador}</p>
+                      <p><strong>CIF:</strong> {factura.nif}</p>
+                      <p><strong>Dirección:</strong> {factura.direccion}</p>
+                    </>
+                  ) : (
+                    <>
+                      <p><strong>Nombre Pagador:</strong> {campaña.nombrePagador}</p>
+                      <p><strong>CIF:</strong> {campaña.nif}</p>
+                      <p><strong>Dirección:</strong> {campaña.direccion}</p>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           )}
