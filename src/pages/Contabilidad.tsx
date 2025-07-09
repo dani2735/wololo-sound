@@ -339,17 +339,28 @@ export default function Contabilidad() {
                      </Button>
                    </TableHead>
                    {isShowingAll && (
-                     <TableHead>
-                       <Button 
-                         variant="ghost" 
-                         className="h-auto p-0 font-medium hover:bg-transparent"
-                         onClick={() => handleSort("cuenta")}
-                       >
-                         Cuenta
-                         {getSortIcon("cuenta")}
-                       </Button>
-                     </TableHead>
-                   )}
+                   <TableHead>
+                      <Button 
+                        variant="ghost" 
+                        className="h-auto p-0 font-medium hover:bg-transparent"
+                        onClick={() => handleSort("cuenta")}
+                      >
+                        Cuenta
+                        {getSortIcon("cuenta")}
+                      </Button>
+                    </TableHead>
+                  )}
+                  <TableHead>
+                    <Button 
+                      variant="ghost" 
+                      className="h-auto p-0 font-medium hover:bg-transparent"
+                      onClick={() => handleSort("detalles")}
+                    >
+                      Detalles
+                      {getSortIcon("detalles")}
+                    </Button>
+                  </TableHead>
+                   <TableHead>Tipo de Cobro</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -394,11 +405,19 @@ export default function Contabilidad() {
                         currency: 'EUR' 
                       })}
                     </TableCell>
-                    {isShowingAll && (
-                      <TableCell>
-                        <Badge variant="outline">{movimiento.cuenta}</Badge>
-                      </TableCell>
-                    )}
+                     {isShowingAll && (
+                       <TableCell>
+                         <Badge variant="outline">{movimiento.cuenta}</Badge>
+                       </TableCell>
+                     )}
+                     <TableCell className="max-w-xs truncate">
+                       {movimiento.detalles || '-'}
+                     </TableCell>
+                     <TableCell>
+                       <Badge variant={movimiento.tipo === 'cobro' ? 'default' : 'destructive'}>
+                         {movimiento.tipo === 'cobro' ? 'Cobro' : 'Pago'}
+                       </Badge>
+                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

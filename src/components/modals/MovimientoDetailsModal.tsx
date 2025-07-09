@@ -60,23 +60,28 @@ export function MovimientoDetailsModal({ movimiento, onClose, onEdit, onDelete }
               </div>
             </div>
 
-            <div>
-              <h3 className="font-semibold mb-3">Importe</h3>
-              <div className="space-y-2">
-                <p className={`text-2xl font-bold ${movimiento.tipo === 'cobro' ? 'text-success' : 'text-destructive'}`}>
-                  {movimiento.tipo === 'cobro' ? '+' : '-'}
-                  {movimiento.precio.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
-                </p>
-              </div>
-            </div>
+             <div>
+               <h3 className="font-semibold mb-3">Información Financiera</h3>
+               <div className="space-y-2">
+                 {movimiento.referenciaFactura && (
+                   <p><strong>Referencia Factura:</strong> <span className="font-mono">{movimiento.referenciaFactura}</span></p>
+                 )}
+                 <p><strong>Precio:</strong> {movimiento.precio.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p>
+                 <p><strong>IVA:</strong> 0,00 €</p>
+                 <p className={`text-lg font-bold ${movimiento.tipo === 'cobro' ? 'text-success' : 'text-destructive'}`}>
+                   <strong>Total:</strong> {movimiento.tipo === 'cobro' ? '+' : '-'}
+                   {movimiento.precio.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                 </p>
+               </div>
+             </div>
           </div>
 
-          {movimiento.detalles && (
-            <div className="mt-4">
-              <h3 className="font-semibold mb-2">Detalles</h3>
-              <p className="text-sm text-muted-foreground">{movimiento.detalles}</p>
-            </div>
-          )}
+           {movimiento.detalles && (
+             <div className="mt-4">
+               <h3 className="font-semibold mb-2">Acciones</h3>
+               <p className="text-sm text-muted-foreground">{movimiento.detalles}</p>
+             </div>
+           )}
 
           <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
             <Button variant="outline" onClick={() => onEdit(movimiento)}>

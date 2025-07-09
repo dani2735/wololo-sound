@@ -184,17 +184,38 @@ export const useAppStore = create<AppStore>()(
           return date.getMonth() + 1 === mesSeleccionado && date.getFullYear() === añoSeleccionado;
         }).length;
         
+        // Calculate additional metrics
+        const totalPendienteFacturar = state.campañas
+          .filter(c => !c.referenciaFactura)
+          .reduce((acc, c) => acc + c.precio, 0);
+          
+        const totalFacturadoHistorico = facturas.reduce((acc, f) => acc + f.precio + f.iva, 0);
+        const totalCobradoHistorico = movimientos
+          .filter(m => m.tipo === 'cobro')
+          .reduce((acc, m) => acc + m.precio, 0);
+          
+        const totalPagadoMes = monthlyMovimientos
+          .filter(m => m.tipo === 'pago')
+          .reduce((acc, m) => acc + m.precio, 0);
+          
+        const numeroFacturas = monthlyFacturas.length;
+
         return {
-          cuentaSL,
-          cuentaPaypal,
-          totalFacturadoPendiente,
-          mesSeleccionado: {
-            totalFacturado,
-            totalCobradoSL,
-            totalCobradoPaypal,
-            numeroAcciones
-          }
-        };
+           cuentaSL,
+           cuentaPaypal,
+           totalFacturadoPendiente,
+           totalPendienteFacturar,
+           totalFacturadoHistorico,
+           totalCobradoHistorico,
+           mesSeleccionado: {
+             totalFacturado,
+             totalCobradoSL,
+             totalCobradoPaypal,
+             totalPagadoMes,
+             numeroFacturas,
+             numeroAcciones
+           }
+         };
       }
     }),
     {

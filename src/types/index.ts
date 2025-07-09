@@ -106,10 +106,15 @@ export interface DashboardData {
   cuentaSL: number;
   cuentaPaypal: number;
   totalFacturadoPendiente: number;
+  totalPendienteFacturar: number;
+  totalFacturadoHistorico: number;
+  totalCobradoHistorico: number;
   mesSeleccionado: {
     totalFacturado: number;
     totalCobradoSL: number;
     totalCobradoPaypal: number;
+    totalPagadoMes: number;
+    numeroFacturas: number;
     numeroAcciones: number;
   };
 }
