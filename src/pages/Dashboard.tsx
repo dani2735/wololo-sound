@@ -45,7 +45,8 @@ export default function Dashboard() {
       </div>
 
       {/* Financial Overview Cards */}
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+       {/* Primera fila: Haber Total, Cuenta SL, Cuenta Paypal */}
+       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
          <Card className="bg-gradient-primary text-primary-foreground shadow-elegant border-0 cursor-pointer transition-all hover:shadow-hover">
            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
              <CardTitle className="text-sm font-medium">
@@ -63,60 +64,6 @@ export default function Dashboard() {
            </CardContent>
          </Card>
 
-         <Card className="bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover">
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-             <CardTitle className="text-sm font-medium text-muted-foreground">
-               Pendiente Cobro
-             </CardTitle>
-             <FileText className="h-4 w-4 text-warning" />
-           </CardHeader>
-           <CardContent>
-             <div className="text-2xl font-bold text-warning">
-               {dashboardData.totalFacturadoPendiente.toLocaleString('es-ES', { 
-                 style: 'currency', 
-                 currency: 'EUR' 
-               })}
-             </div>
-           </CardContent>
-         </Card>
-
-         <Card className="bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover">
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-             <CardTitle className="text-sm font-medium text-muted-foreground">
-               Pendiente Facturar
-             </CardTitle>
-             <FileText className="h-4 w-4 text-warning" />
-           </CardHeader>
-           <CardContent>
-             <div className="text-2xl font-bold text-warning">
-               {dashboardData.totalPendienteFacturar.toLocaleString('es-ES', { 
-                 style: 'currency', 
-                 currency: 'EUR' 
-               })}
-             </div>
-           </CardContent>
-         </Card>
-
-         <Card className="bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover">
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-             <CardTitle className="text-sm font-medium text-muted-foreground">
-               Total Facturado Histórico
-             </CardTitle>
-             <TrendingUp className="h-4 w-4 text-success" />
-           </CardHeader>
-           <CardContent>
-             <div className="text-2xl font-bold text-success">
-               {dashboardData.totalFacturadoHistorico.toLocaleString('es-ES', { 
-                 style: 'currency', 
-                 currency: 'EUR' 
-               })}
-             </div>
-           </CardContent>
-         </Card>
-       </div>
-
-       {/* Additional Overview Cards */}
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
          <Card className="bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover">
            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
              <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -144,6 +91,43 @@ export default function Dashboard() {
            <CardContent>
              <div className="text-2xl font-bold text-foreground">
                {dashboardData.cuentaPaypal.toLocaleString('es-ES', { 
+                 style: 'currency', 
+                 currency: 'EUR' 
+               })}
+             </div>
+           </CardContent>
+         </Card>
+       </div>
+
+       {/* Segunda fila: Pendiente Cobro, Pendiente Facturar */}
+       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+         <Card className="bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover">
+           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+             <CardTitle className="text-sm font-medium text-muted-foreground">
+               Pendiente Cobro
+             </CardTitle>
+             <FileText className="h-4 w-4 text-warning" />
+           </CardHeader>
+           <CardContent>
+             <div className="text-2xl font-bold text-warning">
+               {dashboardData.totalFacturadoPendiente.toLocaleString('es-ES', { 
+                 style: 'currency', 
+                 currency: 'EUR' 
+               })}
+             </div>
+           </CardContent>
+         </Card>
+
+         <Card className="bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover">
+           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+             <CardTitle className="text-sm font-medium text-muted-foreground">
+               Pendiente Facturar
+             </CardTitle>
+             <FileText className="h-4 w-4 text-warning" />
+           </CardHeader>
+           <CardContent>
+             <div className="text-2xl font-bold text-warning">
+               {dashboardData.totalPendienteFacturar.toLocaleString('es-ES', { 
                  style: 'currency', 
                  currency: 'EUR' 
                })}
@@ -254,12 +238,26 @@ export default function Dashboard() {
               </div>
               
               <div className="text-center p-4 rounded-lg bg-accent/30">
-                <div className="text-2xl font-bold text-foreground">
-                  {dashboardData.mesSeleccionado.numeroAcciones}
-                </div>
-                <div className="text-sm text-muted-foreground mt-1">Acciones Registradas</div>
-              </div>
-           </div>
+                 <div className="text-2xl font-bold text-foreground">
+                   {dashboardData.mesSeleccionado.numeroAcciones}
+                 </div>
+                 <div className="text-sm text-muted-foreground mt-1">Acciones Registradas</div>
+               </div>
+            </div>
+            
+            <div className="flex justify-center mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setMesSeleccionado(0); // 0 means all months
+                  setAñoSeleccionado(0); // 0 means all years
+                }}
+                className={mesSeleccionado === 0 && añoSeleccionado === 0 ? "bg-gradient-primary shadow-elegant" : ""}
+              >
+                Ver Todo Histórico
+              </Button>
+            </div>
         </CardContent>
       </Card>
     </div>

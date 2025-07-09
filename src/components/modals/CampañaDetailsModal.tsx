@@ -82,7 +82,13 @@ export function CampañaDetailsModal({ campaña, onClose, onEdit, onDelete, onFa
                 <p><strong>Estado:</strong> <Badge variant={getEstadoBadgeVariant(campaña.estado)}>{campaña.estado}</Badge></p>
                 <p><strong>Tipo de Cobro:</strong> <Badge variant="outline">{campaña.tipoCobro}</Badge></p>
                 <p><strong>Estado Facturación:</strong> <Badge variant={campaña.estadoFacturacion === "Facturado" ? "default" : "destructive"}>{campaña.estadoFacturacion}</Badge></p>
+                {campaña.fechaFacturacion && (
+                  <p><strong>Fecha Facturación:</strong> {new Date(campaña.fechaFacturacion).toLocaleDateString('es-ES')}</p>
+                )}
                 <p><strong>Estado Cobro:</strong> <Badge variant={campaña.estadoCobro === "Cobrado" ? "default" : "destructive"}>{campaña.estadoCobro}</Badge></p>
+                {campaña.fechaCobro && (
+                  <p><strong>Fecha Cobro:</strong> {new Date(campaña.fechaCobro).toLocaleDateString('es-ES')}</p>
+                )}
               </div>
             </div>
 

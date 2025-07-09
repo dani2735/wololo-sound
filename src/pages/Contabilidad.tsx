@@ -143,12 +143,18 @@ export default function Contabilidad() {
     return 0;
   });
 
-  // Calculate totals
-  const totalCobros = filteredMovimientos
+  // Calculate totals (always from all movements, not filtered)
+  const allMovimientos = movimientos.filter(movimiento => {
+    if (isShowingSL) return movimiento.cuenta === "Cuenta SL";
+    if (isShowingPaypal) return movimiento.cuenta === "Paypal";
+    return true; // Show all for main contabilidad page
+  });
+  
+  const totalCobros = allMovimientos
     .filter(m => m.tipo === "cobro")
     .reduce((acc, m) => acc + m.precio, 0);
     
-  const totalPagos = filteredMovimientos
+  const totalPagos = allMovimientos
     .filter(m => m.tipo === "pago")
     .reduce((acc, m) => acc + m.precio, 0);
     
