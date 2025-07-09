@@ -160,20 +160,43 @@ export const useAppStore = create<AppStore>()(
           .filter(f => f.estadoCobro === 'Sin cobrar')
           .reduce((acc, f) => acc + f.precio + f.iva, 0);
         
-        // Calculate monthly data
-        const monthlyFacturas = mesSeleccionado === 0 && añoSeleccionado === 0 
-          ? facturas // Show all if both are 0
-          : facturas.filter(f => {
-              const date = new Date(f.fecha);
-              return date.getMonth() + 1 === mesSeleccionado && date.getFullYear() === añoSeleccionado;
-            });
+        // Calculate monthly data with improved filtering logic
+        let monthlyFacturas, monthlyMovimientos, monthlyCampañas;
         
-        const monthlyMovimientos = mesSeleccionado === 0 && añoSeleccionado === 0
-          ? movimientos // Show all if both are 0
-          : movimientos.filter(m => {
-              const date = new Date(m.fecha);
-              return date.getMonth() + 1 === mesSeleccionado && date.getFullYear() === añoSeleccionado;
-            });
+        if (mesSeleccionado === 0 && añoSeleccionado === 0) {
+          // Show all data (historical view)
+          monthlyFacturas = facturas;
+          monthlyMovimientos = movimientos;
+          monthlyCampañas = state.campañas;
+        } else if (mesSeleccionado === 0 && añoSeleccionado !== 0) {
+          // Show all months of the selected year
+          monthlyFacturas = facturas.filter(f => {
+            const date = new Date(f.fecha);
+            return date.getFullYear() === añoSeleccionado;
+          });
+          monthlyMovimientos = movimientos.filter(m => {
+            const date = new Date(m.fecha);
+            return date.getFullYear() === añoSeleccionado;
+          });
+          monthlyCampañas = state.campañas.filter(c => {
+            const date = new Date(c.fechaCreacion);
+            return date.getFullYear() === añoSeleccionado;
+          });
+        } else {
+          // Show specific month and year
+          monthlyFacturas = facturas.filter(f => {
+            const date = new Date(f.fecha);
+            return date.getMonth() + 1 === mesSeleccionado && date.getFullYear() === añoSeleccionado;
+          });
+          monthlyMovimientos = movimientos.filter(m => {
+            const date = new Date(m.fecha);
+            return date.getMonth() + 1 === mesSeleccionado && date.getFullYear() === añoSeleccionado;
+          });
+          monthlyCampañas = state.campañas.filter(c => {
+            const date = new Date(c.fechaCreacion);
+            return date.getMonth() + 1 === mesSeleccionado && date.getFullYear() === añoSeleccionado;
+          });
+        }
         
         const totalFacturado = monthlyFacturas.reduce((acc, f) => acc + f.precio + f.iva, 0);
         const totalCobradoSL = monthlyMovimientos
@@ -182,13 +205,6 @@ export const useAppStore = create<AppStore>()(
         const totalCobradoPaypal = monthlyMovimientos
           .filter(m => m.tipo === 'cobro' && m.cuenta === 'Paypal')
           .reduce((acc, m) => acc + m.precio, 0);
-        
-        const monthlyCampañas = mesSeleccionado === 0 && añoSeleccionado === 0
-          ? state.campañas // Show all if both are 0
-          : state.campañas.filter(c => {
-              const date = new Date(c.fechaCreacion);
-              return date.getMonth() + 1 === mesSeleccionado && date.getFullYear() === añoSeleccionado;
-            });
             
         const numeroAcciones = monthlyCampañas.reduce((acc, c) => {
           const acciones = c.acciones;
