@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -18,14 +19,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useAppStore } from "@/stores/useAppStore";
-import { Cliente } from "@/types";
+import { useClientes } from "@/hooks/useClientes";
+import { Tables } from "@/integrations/supabase/types";
+
+type Cliente = Tables<'clientes'>;
 
 const formSchema = z.object({
-  nombre: z.string().min(1, "El nombre es requerido"),
-  nombrePagador: z.string().min(1, "El nombre del pagador es requerido"),
+  nombre_cliente: z.string().min(1, "El nombre es requerido"),
+  nombre_pagador: z.string().min(1, "El nombre del pagador es requerido"),
   nif: z.string().min(1, "El NIF es requerido"),
-  direccion: z.string().min(1, "La dirección es requerida"),
+  direccion: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -37,33 +40,39 @@ interface ClienteFormProps {
 }
 
 export function ClienteForm({ isOpen, onClose, cliente }: ClienteFormProps) {
-  const { addCliente, updateCliente } = useAppStore();
+  const { createCliente, updateCliente } = useClientes();
   const isEditing = !!cliente;
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     values: {
-      nombre: cliente?.nombre || "",
-      nombrePagador: cliente?.nombrePagador || "",
+      nombre_cliente: cliente?.nombre_cliente || "",
+      nombre_pagador: cliente?.nombre_pagador || "",
       nif: cliente?.nif || "",
       direccion: cliente?.direccion || "",
     },
   });
 
-  const onSubmit = (data: FormData) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const onSubmit = async (data: FormData) => {
+    setIsSubmitting(true);
+    
+    // Ensure required fields are strings, not undefined
+    const clienteData = {
+      nombre_cliente: data.nombre_cliente!,
+      nombre_pagador: data.nombre_pagador!,
+      nif: data.nif!,
+      direccion: data.direccion || null,
+    };
+    
     if (isEditing && cliente) {
-      updateCliente(cliente.id, data);
+      await updateCliente(cliente.id, clienteData);
     } else {
-      const newCliente: Cliente = {
-        id: `client_${Date.now()}`,
-        nombre: data.nombre,
-        nombrePagador: data.nombrePagador,
-        nif: data.nif,
-        direccion: data.direccion,
-      };
-      addCliente(newCliente);
+      await createCliente(clienteData);
     }
     
+    setIsSubmitting(false);
     form.reset();
     onClose();
   };
@@ -81,7 +90,7 @@ export function ClienteForm({ isOpen, onClose, cliente }: ClienteFormProps) {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="nombre"
+              name="nombre_cliente"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nombre del Cliente</FormLabel>
@@ -95,7 +104,7 @@ export function ClienteForm({ isOpen, onClose, cliente }: ClienteFormProps) {
 
             <FormField
               control={form.control}
-              name="nombrePagador"
+              name="nombre_pagador"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nombre Pagador</FormLabel>
@@ -140,11 +149,11 @@ export function ClienteForm({ isOpen, onClose, cliente }: ClienteFormProps) {
             />
 
             <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
                 Cancelar
               </Button>
-              <Button type="submit" className="bg-gradient-primary">
-                {isEditing ? "Actualizar" : "Crear"} Cliente
+              <Button type="submit" className="bg-gradient-primary" disabled={isSubmitting}>
+                {isSubmitting ? "Guardando..." : isEditing ? "Actualizar" : "Crear"} Cliente
               </Button>
             </div>
           </form>

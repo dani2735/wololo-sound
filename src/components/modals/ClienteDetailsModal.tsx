@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Users, FileText } from "lucide-react";
-import { Cliente } from "@/types";
-import { useAppStore } from "@/stores/useAppStore";
+import { Tables } from "@/integrations/supabase/types";
+
+type Cliente = Tables<'clientes'>;
 
 interface ClienteDetailsModalProps {
   cliente: Cliente;
@@ -12,16 +13,13 @@ interface ClienteDetailsModalProps {
 }
 
 export function ClienteDetailsModal({ cliente, onClose, onEdit, onDelete }: ClienteDetailsModalProps) {
-  const { campañas } = useAppStore();
-
+  // TODO: Implement when campaigns are connected to Supabase
   const getCampaignCount = (clienteId: string) => {
-    return campañas.filter(c => c.clienteId === clienteId).length;
+    return 0;
   };
 
   const getTotalFacturado = (clienteId: string) => {
-    return campañas
-      .filter(c => c.clienteId === clienteId)
-      .reduce((acc, c) => acc + c.precio, 0);
+    return 0;
   };
 
   return (
@@ -39,10 +37,10 @@ export function ClienteDetailsModal({ cliente, onClose, onEdit, onDelete }: Clie
             <div>
               <h3 className="font-semibold mb-3">Información del Cliente</h3>
               <div className="space-y-2">
-                <p><strong>Nombre:</strong> {cliente.nombre}</p>
-                <p><strong>Nombre Pagador:</strong> {cliente.nombrePagador}</p>
+                <p><strong>Nombre:</strong> {cliente.nombre_cliente}</p>
+                <p><strong>Nombre Pagador:</strong> {cliente.nombre_pagador}</p>
                 <p><strong>NIF:</strong> <span className="font-mono">{cliente.nif}</span></p>
-                <p><strong>Dirección:</strong> {cliente.direccion}</p>
+                <p><strong>Dirección:</strong> {cliente.direccion || 'No especificada'}</p>
               </div>
             </div>
 
@@ -71,33 +69,9 @@ export function ClienteDetailsModal({ cliente, onClose, onEdit, onDelete }: Clie
           <div className="mt-4">
             <h3 className="font-semibold mb-2">Campañas Asociadas</h3>
             <div className="space-y-2">
-              {campañas
-                .filter(c => c.clienteId === cliente.id)
-                .map(campaña => (
-                  <div key={campaña.id} className="flex justify-between items-center p-3 bg-accent/30 rounded-lg">
-                    <div>
-                      <p className="font-medium">
-                        {new Date(campaña.fechaCreacion).toLocaleDateString('es-ES')}
-                      </p>
-                      <p className="text-sm text-muted-foreground">{campaña.detalles}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold">
-                        {campaña.precio.toLocaleString('es-ES', { 
-                          style: 'currency', 
-                          currency: 'EUR' 
-                        })}
-                      </p>
-                      <Badge variant="outline">{campaña.estado}</Badge>
-                    </div>
-                  </div>
-                ))}
-              
-              {getCampaignCount(cliente.id) === 0 && (
-                <p className="text-center text-muted-foreground py-4">
-                  No hay campañas asociadas a este cliente.
-                </p>
-              )}
+              <p className="text-center text-muted-foreground py-4">
+                Las campañas se mostrarán cuando estén conectadas a Supabase.
+              </p>
             </div>
           </div>
 

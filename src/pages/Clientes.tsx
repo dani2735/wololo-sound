@@ -3,14 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useAppStore } from "@/stores/useAppStore";
-import { Cliente } from "@/types";
+import { useClientes } from "@/hooks/useClientes";
+import { Tables } from "@/integrations/supabase/types";
 import { Plus, Edit, Trash2, Users, CheckSquare, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { ClienteForm } from "@/components/forms/ClienteForm";
 import { ClienteDetailsModal } from "@/components/modals/ClienteDetailsModal";
 
+type Cliente = Tables<'clientes'>;
+
 export default function Clientes() {
-  const { clientes, campañas, deleteCliente } = useAppStore();
+  const { clientes, loading, deleteCliente } = useClientes();
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
@@ -20,16 +22,16 @@ export default function Clientes() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   const getCampaignCount = (clienteId: string) => {
-    return campañas.filter(c => c.clienteId === clienteId).length;
+    // TODO: Implement when campaigns are connected to Supabase
+    return 0;
   };
 
   const getTotalFacturado = (clienteId: string) => {
-    return campañas
-      .filter(c => c.clienteId === clienteId)
-      .reduce((acc, c) => acc + c.precio, 0);
+    // TODO: Implement when campaigns are connected to Supabase  
+    return 0;
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     const campaignsCount = getCampaignCount(id);
     if (campaignsCount > 0) {
       alert(`No se puede borrar este cliente porque tiene ${campaignsCount} campañas asociadas.`);
@@ -37,7 +39,7 @@ export default function Clientes() {
     }
     
     if (confirm("¿Estás seguro de que quieres borrar este cliente?")) {
-      deleteCliente(id);
+      await deleteCliente(id);
     }
   };
 
@@ -72,7 +74,7 @@ export default function Clientes() {
     }
   };
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = async () => {
     if (selectedItems.length === 0) return;
     
     const clientsWithCampaigns = selectedItems.filter(id => getCampaignCount(id) > 0);
@@ -82,7 +84,9 @@ export default function Clientes() {
     }
     
     if (confirm(`¿Estás seguro de que quieres borrar ${selectedItems.length} clientes?`)) {
-      selectedItems.forEach(id => deleteCliente(id));
+      for (const id of selectedItems) {
+        await deleteCliente(id);
+      }
       setSelectedItems([]);
       setSelectionMode(false);
     }
@@ -125,6 +129,16 @@ export default function Clientes() {
     if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
     return 0;
   });
+
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="text-center py-8">
+          <p className="text-lg text-muted-foreground">Cargando clientes...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -200,23 +214,23 @@ export default function Clientes() {
                     </TableHead>
                   )}
                    <TableHead>
-                     <Button 
-                       variant="ghost" 
-                       className="h-auto p-0 font-medium hover:bg-transparent"
-                       onClick={() => handleSort("nombre")}
-                     >
-                       Cliente
-                       {getSortIcon("nombre")}
+                      <Button 
+                        variant="ghost" 
+                        className="h-auto p-0 font-medium hover:bg-transparent"
+                        onClick={() => handleSort("nombre_cliente")}
+                      >
+                        Cliente
+                        {getSortIcon("nombre_cliente")}
                      </Button>
                    </TableHead>
                    <TableHead>
-                     <Button 
-                       variant="ghost" 
-                       className="h-auto p-0 font-medium hover:bg-transparent"
-                       onClick={() => handleSort("nombrePagador")}
-                     >
-                       Nombre Pagador
-                       {getSortIcon("nombrePagador")}
+                      <Button 
+                        variant="ghost" 
+                        className="h-auto p-0 font-medium hover:bg-transparent"
+                        onClick={() => handleSort("nombre_pagador")}
+                      >
+                        Nombre Pagador
+                        {getSortIcon("nombre_pagador")}
                      </Button>
                    </TableHead>
                    <TableHead>
@@ -274,8 +288,8 @@ export default function Clientes() {
                         />
                       </TableCell>
                     )}
-                    <TableCell className="font-medium">{cliente.nombre}</TableCell>
-                    <TableCell>{cliente.nombrePagador}</TableCell>
+                     <TableCell className="font-medium">{cliente.nombre_cliente}</TableCell>
+                     <TableCell>{cliente.nombre_pagador}</TableCell>
                     <TableCell className="font-mono">{cliente.nif}</TableCell>
                     <TableCell className="max-w-48">
                       <div className="truncate" title={cliente.direccion}>
