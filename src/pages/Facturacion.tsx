@@ -192,7 +192,7 @@ export default function Facturacion() {
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card 
-          className={`bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover ${filtroEstado === "todas" ? "ring-2 ring-primary" : ""}`}
+          className={`bg-gradient-card shadow-card border-2 border-primary cursor-pointer transition-all hover:shadow-hover ${filtroEstado === "todas" ? "ring-2 ring-primary" : ""}`}
           onClick={() => setFiltroEstado("todas")}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -213,28 +213,28 @@ export default function Facturacion() {
         </Card>
 
         <Card 
-          className={`bg-gradient-primary text-primary-foreground shadow-elegant border-0 cursor-pointer transition-all hover:shadow-hover ${filtroEstado === "cobradas" ? "ring-2 ring-primary" : ""}`}
+          className={`bg-gradient-card shadow-card border-2 border-success cursor-pointer transition-all hover:shadow-hover ${filtroEstado === "cobradas" ? "ring-2 ring-primary" : ""}`}
           onClick={() => setFiltroEstado("cobradas")}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Cobrado</CardTitle>
-            <Euro className="h-4 w-4" />
+            <CardTitle className="text-sm text-muted-foreground">Total Cobrado</CardTitle>
+            <Euro className="h-4 w-4 text-success" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-success">
               {totalCobrado.toLocaleString('es-ES', { 
                 style: 'currency', 
                 currency: 'EUR' 
               })}
             </div>
-            <p className="text-xs mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               {filteredFacturas.filter(f => f.estadoCobro === "Cobrado").length} facturas cobradas
             </p>
           </CardContent>
         </Card>
 
         <Card 
-          className={`bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover ${filtroEstado === "pendientes" ? "ring-2 ring-primary" : ""}`}
+          className={`bg-gradient-card shadow-card border-2 border-warning cursor-pointer transition-all hover:shadow-hover ${filtroEstado === "pendientes" ? "ring-2 ring-primary" : ""}`}
           onClick={() => setFiltroEstado("pendientes")}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

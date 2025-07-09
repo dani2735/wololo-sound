@@ -63,6 +63,7 @@ export function FacturaDetailsModal({ factura, onClose, onEdit, onDelete }: Fact
                 <p><strong>Referencia:</strong> <span className="font-mono">{factura.referencia}</span></p>
                 <p><strong>Fecha:</strong> {new Date(factura.fecha).toLocaleDateString('es-ES')}</p>
                 <p><strong>Cliente:</strong> {getClienteName(factura.clienteId)}</p>
+                {factura.datosAcciones && <p><strong>Detalles:</strong> {factura.datosAcciones}</p>}
                 <p><strong>Pagador:</strong> {factura.nombrePagador}</p>
                 <p><strong>NIF:</strong> <span className="font-mono">{factura.nif}</span></p>
                 <p><strong>Dirección:</strong> {factura.direccion}</p>

@@ -201,7 +201,17 @@ export function CampañaForm({ isOpen, onClose, campaña }: CampañaFormProps) {
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => setShowClienteSearch(!showClienteSearch)}
+                          onClick={() => {
+                            const nombreCliente = field.value.toLowerCase();
+                            if (nombreCliente) {
+                              const clientesCoincidentes = clientes.filter(c => 
+                                c.nombre.toLowerCase().includes(nombreCliente)
+                              );
+                              setShowClienteSearch(true);
+                            } else {
+                              setShowClienteSearch(!showClienteSearch);
+                            }
+                          }}
                         >
                           <Search className="h-4 w-4" />
                         </Button>
@@ -209,25 +219,35 @@ export function CampañaForm({ isOpen, onClose, campaña }: CampañaFormProps) {
                     </FormControl>
                     {showClienteSearch && (
                       <div className="mt-2 p-2 border rounded-md bg-muted/30">
-                        <p className="text-sm font-medium mb-2">Clientes existentes:</p>
-                        {clientes.length > 0 ? (
-                          <div className="space-y-1">
-                            {clientes.map(cliente => (
-                              <div 
-                                key={cliente.id}
-                                className="text-sm p-1 hover:bg-accent rounded cursor-pointer"
-                                onClick={() => {
-                                  field.onChange(cliente.nombre);
-                                  setShowClienteSearch(false);
-                                }}
-                              >
-                                {cliente.nombre}
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-muted-foreground">No hay clientes registrados</p>
-                        )}
+                        <p className="text-sm font-medium mb-2">
+                          {field.value ? `Clientes que coinciden con "${field.value}":` : "Clientes existentes:"}
+                        </p>
+                        {(() => {
+                          const clientesFiltrados = field.value 
+                            ? clientes.filter(c => c.nombre.toLowerCase().includes(field.value.toLowerCase()))
+                            : clientes;
+                          
+                          return clientesFiltrados.length > 0 ? (
+                            <div className="space-y-1">
+                              {clientesFiltrados.map(cliente => (
+                                <div 
+                                  key={cliente.id}
+                                  className="text-sm p-1 hover:bg-accent rounded cursor-pointer"
+                                  onClick={() => {
+                                    field.onChange(cliente.nombre);
+                                    setShowClienteSearch(false);
+                                  }}
+                                >
+                                  {cliente.nombre}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">
+                              {field.value ? "No se encontraron clientes similares" : "No hay clientes registrados"}
+                            </p>
+                          );
+                        })()}
                       </div>
                     )}
                     <FormMessage />
@@ -404,6 +424,11 @@ export function CampañaForm({ isOpen, onClose, campaña }: CampañaFormProps) {
                         disabled={cobroAnaValue === 0}
                         {...field}
                         onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        onFocus={(e) => {
+                          if (e.target.value === "0") {
+                            e.target.select();
+                          }
+                        }}
                       />
                     </FormControl>
                     <FormMessage />

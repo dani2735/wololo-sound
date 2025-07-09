@@ -66,20 +66,72 @@ export function MovimientoDetailsModal({ movimiento, onClose, onEdit, onDelete }
                  {movimiento.referenciaFactura && (
                    <p><strong>Referencia Factura:</strong> <span className="font-mono">{movimiento.referenciaFactura}</span></p>
                  )}
-                 <p><strong>Precio:</strong> {movimiento.precio.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p>
-                 <p><strong>IVA:</strong> 0,00 €</p>
+                 <p><strong>Precio:</strong> {(() => {
+                   // Get price from related campaña if available
+                   const { campañas } = useAppStore.getState();
+                   const relacionCampaña = campañas.find(c => c.referenciaFactura === movimiento.referenciaFactura);
+                   const precioBase = relacionCampaña?.precio || movimiento.precio;
+                   return precioBase.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+                 })()}</p>
+                 <p><strong>IVA:</strong> {(() => {
+                   const { campañas } = useAppStore.getState();
+                   const relacionCampaña = campañas.find(c => c.referenciaFactura === movimiento.referenciaFactura);
+                   const iva = relacionCampaña?.iva || 0;
+                   return iva.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+                 })()}</p>
                  <p className={`text-lg font-bold ${movimiento.tipo === 'cobro' ? 'text-success' : 'text-destructive'}`}>
                    <strong>Total:</strong> {movimiento.tipo === 'cobro' ? '+' : '-'}
-                   {movimiento.precio.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                   {(() => {
+                     const { campañas } = useAppStore.getState();
+                     const relacionCampaña = campañas.find(c => c.referenciaFactura === movimiento.referenciaFactura);
+                     const precioBase = relacionCampaña?.precio || movimiento.precio;
+                     const iva = relacionCampaña?.iva || 0;
+                     return (precioBase + iva).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+                   })()}
                  </p>
                </div>
              </div>
           </div>
 
-           {movimiento.detalles && (
+            {movimiento.detalles && (
              <div className="mt-4">
                <h3 className="font-semibold mb-2">Acciones</h3>
                <p className="text-sm text-muted-foreground">{movimiento.detalles}</p>
+             </div>
+           )}
+
+           {movimiento.referenciaFactura && (
+             <div className="mt-4">
+               <h3 className="font-semibold mb-2">Acciones Realizadas</h3>
+               <div className="text-sm text-muted-foreground">
+                 {(() => {
+                   const { campañas } = useAppStore.getState();
+                   const relacionCampaña = campañas.find(c => c.referenciaFactura === movimiento.referenciaFactura);
+                   if (!relacionCampaña) return "No hay acciones registradas";
+                   
+                   const formatAcciones = (acciones: any) => {
+                     const accionesArray = [];
+                     
+                     if (acciones.instagramPost > 0) accionesArray.push(`IG Post: ${acciones.instagramPost}`);
+                     if (acciones.instagramFlyer > 0) accionesArray.push(`IG Flyer: ${acciones.instagramFlyer}`);
+                     if (acciones.instagramVideo > 0) accionesArray.push(`IG Video: ${acciones.instagramVideo}`);
+                     if (acciones.instagramVideoAna > 0) accionesArray.push(`IG Video Ana: ${acciones.instagramVideoAna}`);
+                     if (acciones.instagramAgendaMadrid > 0) accionesArray.push(`IG Agenda Madrid: ${acciones.instagramAgendaMadrid}`);
+                     if (acciones.instagramAgendaIbiza > 0) accionesArray.push(`IG Agenda Ibiza: ${acciones.instagramAgendaIbiza}`);
+                     if (acciones.webArticulo > 0) accionesArray.push(`Web Artículo: ${acciones.webArticulo}`);
+                     if (acciones.webEntrevista > 0) accionesArray.push(`Web Entrevista: ${acciones.webEntrevista}`);
+                     if (acciones.webAgenda > 0) accionesArray.push(`Web Agenda: ${acciones.webAgenda}`);
+                     if (acciones.podcastMencion > 0) accionesArray.push(`Podcast Mención: ${acciones.podcastMencion}`);
+                     if (acciones.podcastEntrevista > 0) accionesArray.push(`Podcast Entrevista: ${acciones.podcastEntrevista}`);
+                     if (acciones.youtubeEntrevista > 0) accionesArray.push(`YouTube Entrevista: ${acciones.youtubeEntrevista}`);
+                     if (acciones.otrasAcciones) accionesArray.push(`Otras: ${acciones.otrasAcciones}`);
+                     
+                     return accionesArray.length > 0 ? accionesArray.join(", ") : "Sin acciones";
+                   };
+                   
+                   return formatAcciones(relacionCampaña.acciones);
+                 })()}
+               </div>
              </div>
            )}
 

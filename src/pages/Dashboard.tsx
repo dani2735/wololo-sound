@@ -46,7 +46,7 @@ export default function Dashboard() {
 
       {/* Financial Overview Cards */}
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-         <Card className="bg-gradient-primary text-primary-foreground shadow-elegant border-0">
+         <Card className="bg-gradient-primary text-primary-foreground shadow-elegant border-0 cursor-pointer transition-all hover:shadow-hover">
            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
              <CardTitle className="text-sm font-medium">
                Haber Total
@@ -63,41 +63,7 @@ export default function Dashboard() {
            </CardContent>
          </Card>
 
-         <Card className="bg-gradient-card shadow-card border-0">
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-             <CardTitle className="text-sm font-medium text-muted-foreground">
-               Cuenta SL
-             </CardTitle>
-             <Euro className="h-4 w-4 text-muted-foreground" />
-           </CardHeader>
-           <CardContent>
-             <div className="text-2xl font-bold text-foreground">
-               {dashboardData.cuentaSL.toLocaleString('es-ES', { 
-                 style: 'currency', 
-                 currency: 'EUR' 
-               })}
-             </div>
-           </CardContent>
-         </Card>
-
-         <Card className="bg-gradient-card shadow-card border-0">
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-             <CardTitle className="text-sm font-medium text-muted-foreground">
-               Cuenta Paypal
-             </CardTitle>
-             <Euro className="h-4 w-4 text-muted-foreground" />
-           </CardHeader>
-           <CardContent>
-             <div className="text-2xl font-bold text-foreground">
-               {dashboardData.cuentaPaypal.toLocaleString('es-ES', { 
-                 style: 'currency', 
-                 currency: 'EUR' 
-               })}
-             </div>
-           </CardContent>
-         </Card>
-
-         <Card className="bg-gradient-card shadow-card border-0">
+         <Card className="bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover">
            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
              <CardTitle className="text-sm font-medium text-muted-foreground">
                Pendiente Cobro
@@ -113,11 +79,8 @@ export default function Dashboard() {
              </div>
            </CardContent>
          </Card>
-       </div>
 
-       {/* Additional Overview Cards */}
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-         <Card className="bg-gradient-card shadow-card border-0">
+         <Card className="bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover">
            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
              <CardTitle className="text-sm font-medium text-muted-foreground">
                Pendiente Facturar
@@ -134,7 +97,7 @@ export default function Dashboard() {
            </CardContent>
          </Card>
 
-         <Card className="bg-gradient-card shadow-card border-0">
+         <Card className="bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover">
            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
              <CardTitle className="text-sm font-medium text-muted-foreground">
                Total Facturado Histórico
@@ -150,8 +113,11 @@ export default function Dashboard() {
              </div>
            </CardContent>
          </Card>
+       </div>
 
-         <Card className="bg-gradient-card shadow-card border-0">
+       {/* Additional Overview Cards */}
+       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+         <Card className="bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover">
            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
              <CardTitle className="text-sm font-medium text-muted-foreground">
                Total Cobrado Histórico
@@ -168,16 +134,16 @@ export default function Dashboard() {
            </CardContent>
          </Card>
 
-         <Card className="bg-gradient-card shadow-card border-0">
+         <Card className="bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover">
            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
              <CardTitle className="text-sm font-medium text-muted-foreground">
-               Total Pagado Mes
+               Cuenta SL
              </CardTitle>
-             <TrendingDown className="h-4 w-4 text-destructive" />
+             <Euro className="h-4 w-4 text-muted-foreground" />
            </CardHeader>
            <CardContent>
-             <div className="text-2xl font-bold text-destructive">
-               {dashboardData.mesSeleccionado.totalPagadoMes.toLocaleString('es-ES', { 
+             <div className="text-2xl font-bold text-foreground">
+               {dashboardData.cuentaSL.toLocaleString('es-ES', { 
                  style: 'currency', 
                  currency: 'EUR' 
                })}
@@ -234,7 +200,7 @@ export default function Dashboard() {
         </CardHeader>
         
          <CardContent>
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
              <div className="text-center p-4 rounded-lg bg-accent/30">
                <div className="text-2xl font-bold text-foreground">
                  {dashboardData.mesSeleccionado.totalFacturado.toLocaleString('es-ES', { 
@@ -271,26 +237,7 @@ export default function Dashboard() {
                </div>
                <div className="text-sm text-muted-foreground mt-1">Número Facturas</div>
              </div>
-             
-             <div className="text-center p-4 rounded-lg bg-accent/30">
-               <div className="text-2xl font-bold text-foreground">
-                 {dashboardData.mesSeleccionado.numeroAcciones}
-               </div>
-               <div className="text-sm text-muted-foreground mt-1">Número de Acciones</div>
-             </div>
            </div>
-          
-          <div className="mt-6 p-4 rounded-lg bg-primary/10 border border-primary/20">
-            <div className="text-center">
-              <div className="text-lg font-semibold text-primary">Total Cobrado en {meses[mesSeleccionado - 1]}</div>
-              <div className="text-2xl font-bold text-primary mt-1">
-                {totalCobradoMes.toLocaleString('es-ES', { 
-                  style: 'currency', 
-                  currency: 'EUR' 
-                })}
-              </div>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>

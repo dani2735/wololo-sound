@@ -78,6 +78,7 @@ export function CampañaDetailsModal({ campaña, onClose, onEdit, onDelete, onFa
               <div className="space-y-2">
                 <p><strong>Fecha Creación:</strong> {new Date(campaña.fechaCreacion).toLocaleDateString('es-ES')}</p>
                 <p><strong>Cliente:</strong> {getClienteName(campaña.clienteId)}</p>
+                {campaña.detalles && <p><strong>Detalles:</strong> {campaña.detalles}</p>}
                 <p><strong>Estado:</strong> <Badge variant={getEstadoBadgeVariant(campaña.estado)}>{campaña.estado}</Badge></p>
                 <p><strong>Tipo de Cobro:</strong> <Badge variant="outline">{campaña.tipoCobro}</Badge></p>
                 <p><strong>Estado Facturación:</strong> <Badge variant={campaña.estadoFacturacion === "Facturado" ? "default" : "destructive"}>{campaña.estadoFacturacion}</Badge></p>
@@ -96,12 +97,6 @@ export function CampañaDetailsModal({ campaña, onClose, onEdit, onDelete, onFa
             </div>
           </div>
 
-          {campaña.detalles && (
-            <div className="mt-4">
-              <h3 className="font-semibold mb-2">Detalles</h3>
-              <p className="text-sm text-muted-foreground">{campaña.detalles}</p>
-            </div>
-          )}
 
           <div className="mt-4">
             <h3 className="font-semibold mb-2">Acciones</h3>
@@ -127,13 +122,9 @@ export function CampañaDetailsModal({ campaña, onClose, onEdit, onDelete, onFa
               <div className="space-y-1 text-sm">
                 <p><strong>Referencia:</strong> <span className="font-mono">{campaña.referenciaFactura}</span></p>
                 <p><strong>Fecha Facturación:</strong> {campaña.fechaFacturacion ? new Date(campaña.fechaFacturacion).toLocaleDateString('es-ES') : 'No disponible'}</p>
-                {campaña.nombrePagador && (
-                  <>
-                    <p><strong>Nombre Pagador:</strong> {campaña.nombrePagador}</p>
-                    <p><strong>CIF:</strong> {campaña.nif}</p>
-                    <p><strong>Dirección:</strong> {campaña.direccion}</p>
-                  </>
-                )}
+                <p><strong>Nombre Pagador:</strong> {campaña.nombrePagador}</p>
+                <p><strong>CIF:</strong> {campaña.nif}</p>
+                <p><strong>Dirección:</strong> {campaña.direccion}</p>
               </div>
             </div>
           )}

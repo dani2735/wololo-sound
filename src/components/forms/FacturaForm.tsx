@@ -338,7 +338,7 @@ export function FacturaForm({ isOpen, onClose, factura, campaña }: FacturaFormP
               name="datosAcciones"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Datos de Acciones</FormLabel>
+                  <FormLabel>Datos factura</FormLabel>
                   <FormControl>
                     <Textarea 
                       placeholder="Descripción que aparecerá en la factura"

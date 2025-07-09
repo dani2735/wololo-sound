@@ -413,11 +413,16 @@ export default function Contabilidad() {
                      <TableCell className="max-w-xs truncate">
                        {movimiento.detalles || '-'}
                      </TableCell>
-                     <TableCell>
-                       <Badge variant={movimiento.tipo === 'cobro' ? 'default' : 'destructive'}>
-                         {movimiento.tipo === 'cobro' ? 'Cobro' : 'Pago'}
-                       </Badge>
-                     </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {(() => {
+                            // Get tipo cobro from related campaña if available
+                            const { campañas } = useAppStore.getState();
+                            const relacionCampaña = campañas.find(c => c.referenciaFactura === movimiento.referenciaFactura);
+                            return relacionCampaña?.tipoCobro || 'No especificado';
+                          })()}
+                        </Badge>
+                      </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
