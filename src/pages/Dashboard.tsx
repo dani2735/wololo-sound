@@ -201,7 +201,9 @@ export default function Dashboard() {
                 {meses.map((mes, index) => {
                   const mesNum = index + 1;
                   const isAvailable = availableMonths.includes(mesNum);
-                  const isSelected = mesSeleccionado === mesNum;
+                  // Si mesSeleccionado es 0 (todos los meses), marcar todos los disponibles
+                  // Si mesSeleccionado es específico, marcar solo ese mes
+                  const isSelected = mesSeleccionado === 0 ? isAvailable : mesSeleccionado === mesNum;
                   
                   return (
                     <Button
