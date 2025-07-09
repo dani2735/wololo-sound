@@ -180,7 +180,10 @@ export default function Dashboard() {
                 </Button>
               <Select 
                 value={añoSeleccionado.toString()} 
-                onValueChange={(value) => setAñoSeleccionado(Number(value))}
+                onValueChange={(value) => {
+                  setAñoSeleccionado(Number(value));
+                  setMesSeleccionado(0); // Seleccionar todos los meses del año
+                }}
               >
                 <SelectTrigger className="w-32">
                   <SelectValue />
