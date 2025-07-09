@@ -191,7 +191,10 @@ export default function Facturacion() {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-gradient-card shadow-card border-0">
+        <Card 
+          className={`bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover ${filtroEstado === "todas" ? "ring-2 ring-primary" : ""}`}
+          onClick={() => setFiltroEstado("todas")}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm text-muted-foreground">Total Facturado</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
@@ -209,7 +212,10 @@ export default function Facturacion() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-primary text-primary-foreground shadow-elegant border-0">
+        <Card 
+          className={`bg-gradient-primary text-primary-foreground shadow-elegant border-0 cursor-pointer transition-all hover:shadow-hover ${filtroEstado === "cobradas" ? "ring-2 ring-primary" : ""}`}
+          onClick={() => setFiltroEstado("cobradas")}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Cobrado</CardTitle>
             <Euro className="h-4 w-4" />
@@ -227,7 +233,10 @@ export default function Facturacion() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card shadow-card border-0">
+        <Card 
+          className={`bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover ${filtroEstado === "pendientes" ? "ring-2 ring-primary" : ""}`}
+          onClick={() => setFiltroEstado("pendientes")}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm text-muted-foreground">Pendiente de Cobro</CardTitle>
             <Euro className="h-4 w-4 text-warning" />
@@ -304,7 +313,7 @@ export default function Facturacion() {
                        {getSortIcon("clienteId")}
                      </Button>
                    </TableHead>
-                   <TableHead>Detalles</TableHead>
+                   
                    <TableHead>
                      <Button 
                        variant="ghost" 
@@ -377,11 +386,6 @@ export default function Facturacion() {
                     </TableCell>
                     <TableCell>{factura.nombrePagador}</TableCell>
                     <TableCell>{getClienteName(factura.clienteId)}</TableCell>
-                    <TableCell className="max-w-32">
-                      <div className="truncate" title={factura.datosAcciones}>
-                        {factura.datosAcciones}
-                      </div>
-                    </TableCell>
                     <TableCell>
                       {factura.precio.toLocaleString('es-ES', { 
                         style: 'currency', 

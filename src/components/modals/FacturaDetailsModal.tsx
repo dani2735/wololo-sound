@@ -85,36 +85,11 @@ export function FacturaDetailsModal({ factura, onClose, onEdit, onDelete }: Fact
 
           {factura.datosAcciones && (
             <div className="mt-4">
-              <h3 className="font-semibold mb-2">Datos de Acciones</h3>
+              <h3 className="font-semibold mb-2">Datos factura</h3>
               <p className="text-sm text-muted-foreground">{factura.datosAcciones}</p>
             </div>
           )}
 
-          {factura.estadoCobro === "Sin cobrar" && (
-            <div className="mt-4 p-4 bg-accent/30 rounded-lg">
-              <h3 className="font-semibold mb-3">Marcar como Cobrada</h3>
-              <div className="flex items-center gap-3">
-                <Select value={cuentaCobro} onValueChange={(value: CuentaMovimiento) => setCuentaCobro(value)}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Cuenta SL">Cuenta SL</SelectItem>
-                    <SelectItem value="Paypal">Paypal</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button 
-                  className="bg-gradient-primary"
-                  onClick={() => {
-                    marcarFacturaCobrada(factura.id, cuentaCobro);
-                    onClose();
-                  }}
-                >
-                  Marcar como Cobrada
-                </Button>
-              </div>
-            </div>
-          )}
 
           <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
             <Button variant="outline" onClick={downloadPDF}>
@@ -133,6 +108,17 @@ export function FacturaDetailsModal({ factura, onClose, onEdit, onDelete }: Fact
               <Trash2 className="mr-2 h-4 w-4" />
               Borrar
             </Button>
+            {factura.estadoCobro === "Sin cobrar" && (
+              <Button 
+                className="bg-gradient-primary"
+                onClick={() => {
+                  marcarFacturaCobrada(factura.id, "Cuenta SL");
+                  onClose();
+                }}
+              >
+                Marcar como Cobrada
+              </Button>
+            )}
           </div>
         </div>
       </div>

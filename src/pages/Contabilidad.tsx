@@ -22,6 +22,7 @@ export default function Contabilidad() {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [sortField, setSortField] = useState<string>("");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [filtroEstado, setFiltroEstado] = useState<string>("");
 
   // Determine which account to show based on route
   const isShowingAll = location.pathname === "/contabilidad";
@@ -31,6 +32,8 @@ export default function Contabilidad() {
   const filteredMovimientos = movimientos.filter(movimiento => {
     if (isShowingSL) return movimiento.cuenta === "Cuenta SL";
     if (isShowingPaypal) return movimiento.cuenta === "Paypal";
+    if (filtroEstado === "cobros") return movimiento.tipo === "cobro";
+    if (filtroEstado === "pagos") return movimiento.tipo === "pago";
     return true; // Show all for main contabilidad page
   });
 
@@ -208,7 +211,32 @@ export default function Contabilidad() {
 
       {/* Balance Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-gradient-card shadow-card border-0">
+        <Card 
+          className={`shadow-elegant border-0 cursor-pointer transition-all hover:shadow-hover ${balance >= 0 ? 'bg-gradient-primary text-primary-foreground' : 'bg-destructive text-destructive-foreground'}`}
+          onClick={() => setFiltroEstado("")}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Balance</CardTitle>
+            {balance >= 0 ? (
+              <TrendingUp className="h-4 w-4" />
+            ) : (
+              <TrendingDown className="h-4 w-4" />
+            )}
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {balance.toLocaleString('es-ES', { 
+                style: 'currency', 
+                currency: 'EUR' 
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className="bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover"
+          onClick={() => setFiltroEstado("cobros")}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm text-muted-foreground">Total Cobros</CardTitle>
             <TrendingUp className="h-4 w-4 text-success" />
@@ -223,7 +251,10 @@ export default function Contabilidad() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card shadow-card border-0">
+        <Card 
+          className="bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover"
+          onClick={() => setFiltroEstado("pagos")}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm text-muted-foreground">Total Pagos</CardTitle>
             <TrendingDown className="h-4 w-4 text-destructive" />
@@ -231,25 +262,6 @@ export default function Contabilidad() {
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
               {totalPagos.toLocaleString('es-ES', { 
-                style: 'currency', 
-                currency: 'EUR' 
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className={`shadow-elegant border-0 ${balance >= 0 ? 'bg-gradient-primary text-primary-foreground' : 'bg-destructive text-destructive-foreground'}`}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Balance</CardTitle>
-            {balance >= 0 ? (
-              <TrendingUp className="h-4 w-4" />
-            ) : (
-              <TrendingDown className="h-4 w-4" />
-            )}
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {balance.toLocaleString('es-ES', { 
                 style: 'currency', 
                 currency: 'EUR' 
               })}

@@ -16,8 +16,9 @@ export function CampañaDetailsModal({ campaña, onClose, onEdit, onDelete, onFa
   const { clientes } = useAppStore();
 
   const getClienteName = (clienteId: string) => {
+    if (clienteId.startsWith('temp_')) return "cliente temporal";
     const cliente = clientes.find(c => c.id === clienteId);
-    return cliente?.nombre || clienteId.startsWith('temp_') ? "Cliente temporal" : "Cliente no encontrado";
+    return cliente?.nombre || "Cliente no encontrado";
   };
 
   const getEstadoBadgeVariant = (estado: string) => {
@@ -95,8 +96,15 @@ export function CampañaDetailsModal({ campaña, onClose, onEdit, onDelete, onFa
             </div>
           </div>
 
+          {campaña.detalles && (
+            <div className="mt-4">
+              <h3 className="font-semibold mb-2">Detalles</h3>
+              <p className="text-sm text-muted-foreground">{campaña.detalles}</p>
+            </div>
+          )}
+
           <div className="mt-4">
-            <h3 className="font-semibold mb-2">Acciones Realizadas</h3>
+            <h3 className="font-semibold mb-2">Acciones</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {getAccionesRealizadas().map((accion, index) => (
                 <div key={index} className="text-sm p-2 bg-accent/30 rounded">
@@ -105,13 +113,6 @@ export function CampañaDetailsModal({ campaña, onClose, onEdit, onDelete, onFa
               ))}
             </div>
           </div>
-
-          {campaña.detalles && (
-            <div className="mt-4">
-              <h3 className="font-semibold mb-2">Detalles</h3>
-              <p className="text-sm text-muted-foreground">{campaña.detalles}</p>
-            </div>
-          )}
 
           {campaña.comentarios && (
             <div className="mt-4">
@@ -126,6 +127,13 @@ export function CampañaDetailsModal({ campaña, onClose, onEdit, onDelete, onFa
               <div className="space-y-1 text-sm">
                 <p><strong>Referencia:</strong> <span className="font-mono">{campaña.referenciaFactura}</span></p>
                 <p><strong>Fecha Facturación:</strong> {campaña.fechaFacturacion ? new Date(campaña.fechaFacturacion).toLocaleDateString('es-ES') : 'No disponible'}</p>
+                {campaña.nombrePagador && (
+                  <>
+                    <p><strong>Nombre Pagador:</strong> {campaña.nombrePagador}</p>
+                    <p><strong>CIF:</strong> {campaña.nif}</p>
+                    <p><strong>Dirección:</strong> {campaña.direccion}</p>
+                  </>
+                )}
               </div>
             </div>
           )}

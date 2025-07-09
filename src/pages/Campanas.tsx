@@ -342,6 +342,16 @@ export default function Campanas() {
                      <Button 
                        variant="ghost" 
                        className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("estadoFacturacion")}
+                     >
+                       Estado Facturación
+                       {getSortIcon("estadoFacturacion")}
+                     </Button>
+                   </TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
                        onClick={() => handleSort("estadoCobro")}
                      >
                        Estado Cobro
@@ -395,6 +405,11 @@ export default function Campanas() {
                       </Badge>
                     </TableCell>
                     <TableCell>{campaña.tipoCobro}</TableCell>
+                    <TableCell>
+                      <Badge variant={campaña.estadoFacturacion === "Facturado" ? "default" : "destructive"}>
+                        {campaña.estadoFacturacion}
+                      </Badge>
+                    </TableCell>
                     <TableCell>
                       <Badge variant={getCobroBadgeVariant(campaña.estadoCobro)}>
                         {campaña.estadoCobro}

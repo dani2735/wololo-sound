@@ -22,7 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Minus } from "lucide-react";
+import { Plus, Minus, Search } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { CampañaPrensa, CampañaPrensaBase, Acciones } from "@/types";
 
@@ -64,6 +64,7 @@ interface CampañaFormProps {
 export function CampañaForm({ isOpen, onClose, campaña }: CampañaFormProps) {
   const { clientes, addCampaña, updateCampaña } = useAppStore();
   const isEditing = !!campaña;
+  const [showClienteSearch, setShowClienteSearch] = useState(false);
 
   const getClienteNombre = (clienteId: string) => {
     const cliente = clientes.find(c => c.id === clienteId);
@@ -94,7 +95,7 @@ export function CampañaForm({ isOpen, onClose, campaña }: CampañaFormProps) {
       cobroAna: campaña?.cobroAna || 0,
       comentarios: campaña?.comentarios || "",
       estado: campaña?.estado || "EN CURSO",
-      tipoCobro: campaña?.tipoCobro || "Paypal",
+      tipoCobro: campaña?.tipoCobro || "Factura Wololo Sound",
     },
   });
 
@@ -194,8 +195,41 @@ export function CampañaForm({ isOpen, onClose, campaña }: CampañaFormProps) {
                   <FormItem>
                     <FormLabel>Cliente</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nombre del cliente" {...field} />
+                      <div className="flex gap-2">
+                        <Input placeholder="Nombre del cliente" {...field} />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowClienteSearch(!showClienteSearch)}
+                        >
+                          <Search className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </FormControl>
+                    {showClienteSearch && (
+                      <div className="mt-2 p-2 border rounded-md bg-muted/30">
+                        <p className="text-sm font-medium mb-2">Clientes existentes:</p>
+                        {clientes.length > 0 ? (
+                          <div className="space-y-1">
+                            {clientes.map(cliente => (
+                              <div 
+                                key={cliente.id}
+                                className="text-sm p-1 hover:bg-accent rounded cursor-pointer"
+                                onClick={() => {
+                                  field.onChange(cliente.nombre);
+                                  setShowClienteSearch(false);
+                                }}
+                              >
+                                {cliente.nombre}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No hay clientes registrados</p>
+                        )}
+                      </div>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -341,6 +375,11 @@ export function CampañaForm({ isOpen, onClose, campaña }: CampañaFormProps) {
                         step="0.01"
                         {...field}
                         onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        onFocus={(e) => {
+                          if (e.target.value === "0") {
+                            e.target.select();
+                          }
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
