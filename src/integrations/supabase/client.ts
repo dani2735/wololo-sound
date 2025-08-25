@@ -2,7 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = "http://192.168.3.29:8000";
+const SUPABASE_URL = "https://wololosoundbackend.danivera.info";
 const SUPABASE_PUBLISHABLE_KEY = "cb9c7dd8c3c182ec923c326a9e158f879b307a4d1d9ce8f4dc9310f1549ed121";
 
 // Import the supabase client like this:
