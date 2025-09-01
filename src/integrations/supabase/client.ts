@@ -2,8 +2,8 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = "https://wololosoundbackend.danivera.info";
-const SUPABASE_PUBLISHABLE_KEY = "cb9c7dd8c3c182ec923c326a9e158f879b307a4d1d9ce8f4dc9310f1549ed121";
+const SUPABASE_URL = "https://rlogzhvfcahjhufwthlq.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsb2d6aHZmY2Foamh1Znd0aGxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwODE2NTYsImV4cCI6MjA2NzY1NzY1Nn0.VEMMs5ZLDb6XT7c44pHr8WY2H_LaBEY44FraYGOBIaQ";
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
