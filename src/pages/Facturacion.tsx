@@ -5,14 +5,17 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useAppStore } from "@/stores/useAppStore";
-import { Factura } from "@/types";
+import { useFacturas } from "@/hooks/useFacturas";
+import { useClientes } from "@/hooks/useClientes";
+import { Tables } from "@/integrations/supabase/types";
 import { Plus, Edit, Trash2, FileText, Euro, CheckSquare, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
-import { FacturaForm } from "@/components/forms/FacturaForm";
-import { FacturaDetailsModal } from "@/components/modals/FacturaDetailsModal";
+// TODO: Implement FacturaForm and FacturaDetailsModal for new schema
+
+type Factura = Tables<'facturas'>;
 
 export default function Facturacion() {
-  const { facturas, clientes, deleteFactura } = useAppStore();
+  const { facturas, loading, deleteFactura } = useFacturas();
+  const { clientes } = useClientes();
   const [selectedFactura, setSelectedFactura] = useState<Factura | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<string>("todas");
   const [showForm, setShowForm] = useState(false);
@@ -25,23 +28,24 @@ export default function Facturacion() {
   const [baseFacturas] = useState(facturas); // Keep original list for stats
   
   const filteredFacturas = facturas.filter(factura => {
-    if (filtroEstado === "cobradas") return factura.estadoCobro === "Cobrado";
-    if (filtroEstado === "pendientes") return factura.estadoCobro === "Sin cobrar";
+    if (filtroEstado === "cobradas") return factura.estado_cobro === "Cobrado";
+    if (filtroEstado === "pendientes") return factura.estado_cobro === "Sin cobrar";
     return true;
   });
 
-  const getClienteName = (clienteId: string) => {
+  const getClienteName = (clienteId: string | null) => {
+    if (!clienteId) return "Sin cliente";
     const cliente = clientes.find(c => c.id === clienteId);
     return cliente?.nombre || "Cliente no encontrado";
   };
 
-  const getEstadoBadgeVariant = (estado: string) => {
+  const getEstadoBadgeVariant = (estado: string | null) => {
     return estado === "Cobrado" ? "default" : "destructive";
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm("¿Estás seguro de que quieres borrar esta factura?")) {
-      deleteFactura(id);
+      await deleteFactura(id);
     }
   };
 
@@ -76,11 +80,13 @@ export default function Facturacion() {
     }
   };
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = async () => {
     if (selectedItems.length === 0) return;
     
     if (confirm(`¿Estás seguro de que quieres borrar ${selectedItems.length} facturas?`)) {
-      selectedItems.forEach(id => deleteFactura(id));
+      for (const id of selectedItems) {
+        await deleteFactura(id);
+      }
       setSelectedItems([]);
       setSelectionMode(false);
     }
@@ -106,12 +112,12 @@ export default function Facturacion() {
     let aValue: any = a[sortField as keyof Factura];
     let bValue: any = b[sortField as keyof Factura];
     
-    if (sortField === "clienteId") {
-      aValue = getClienteName(a.clienteId);
-      bValue = getClienteName(b.clienteId);
+    if (sortField === "id_campana") {
+      aValue = ""; // TODO: Get client name from campaign
+      bValue = ""; // TODO: Get client name from campaign 
     } else if (sortField === "total") {
-      aValue = a.precio + a.iva;
-      bValue = b.precio + b.iva;
+      aValue = (a.precio || 0) + (a.iva || 0);
+      bValue = (b.precio || 0) + (b.iva || 0);
     }
     
     if (typeof aValue === "string") {
@@ -125,9 +131,19 @@ export default function Facturacion() {
   });
 
   // Cálculos para las tarjetas de resumen (always use all invoices)
-  const totalFacturado = baseFacturas.reduce((acc, factura) => acc + factura.precio + factura.iva, 0);
-  const totalCobrado = baseFacturas.filter(f => f.estadoCobro === "Cobrado").reduce((acc, factura) => acc + factura.precio + factura.iva, 0);
-  const pendienteCobro = baseFacturas.filter(f => f.estadoCobro === "Sin cobrar").reduce((acc, factura) => acc + factura.precio + factura.iva, 0);
+  const totalFacturado = baseFacturas.reduce((acc, factura) => acc + (factura.precio || 0) + (factura.iva || 0), 0);
+  const totalCobrado = baseFacturas.filter(f => f.estado_cobro === "Cobrado").reduce((acc, factura) => acc + (factura.precio || 0) + (factura.iva || 0), 0);
+  const pendienteCobro = baseFacturas.filter(f => f.estado_cobro === "Sin cobrar").reduce((acc, factura) => acc + (factura.precio || 0) + (factura.iva || 0), 0);
+
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="text-center py-8">
+          <p className="text-lg text-muted-foreground">Cargando facturas...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -205,7 +221,7 @@ export default function Facturacion() {
               })}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {filteredFacturas.length} facturas
+              {facturas.length} facturas
             </p>
           </CardContent>
         </Card>
@@ -226,7 +242,7 @@ export default function Facturacion() {
               })}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {filteredFacturas.filter(f => f.estadoCobro === "Cobrado").length} facturas cobradas
+              {facturas.filter(f => f.estado_cobro === "Cobrado").length} facturas cobradas
             </p>
           </CardContent>
         </Card>
@@ -247,7 +263,7 @@ export default function Facturacion() {
               })}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {filteredFacturas.filter(f => f.estadoCobro === "Sin cobrar").length} facturas pendientes
+              {facturas.filter(f => f.estado_cobro === "Sin cobrar").length} facturas pendientes
             </p>
           </CardContent>
         </Card>
@@ -291,26 +307,7 @@ export default function Facturacion() {
                        {getSortIcon("referencia")}
                      </Button>
                    </TableHead>
-                   <TableHead>
-                     <Button 
-                       variant="ghost" 
-                       className="h-auto p-0 font-medium hover:bg-transparent"
-                       onClick={() => handleSort("nombrePagador")}
-                     >
-                       Pagador
-                       {getSortIcon("nombrePagador")}
-                     </Button>
-                   </TableHead>
-                   <TableHead>
-                     <Button 
-                       variant="ghost" 
-                       className="h-auto p-0 font-medium hover:bg-transparent"
-                       onClick={() => handleSort("clienteId")}
-                     >
-                       Cliente
-                       {getSortIcon("clienteId")}
-                     </Button>
-                   </TableHead>
+                   <TableHead>Cliente</TableHead>
                    
                    <TableHead>
                      <Button 
@@ -346,10 +343,10 @@ export default function Facturacion() {
                      <Button 
                        variant="ghost" 
                        className="h-auto p-0 font-medium hover:bg-transparent"
-                       onClick={() => handleSort("estadoCobro")}
+                       onClick={() => handleSort("estado_cobro")}
                      >
                        Estado Cobro
-                       {getSortIcon("estadoCobro")}
+                       {getSortIcon("estado_cobro")}
                      </Button>
                    </TableHead>
                 </TableRow>
@@ -377,34 +374,33 @@ export default function Facturacion() {
                       </TableCell>
                     )}
                     <TableCell>
-                      {new Date(factura.fecha).toLocaleDateString('es-ES')}
+                      {factura.fecha ? new Date(factura.fecha).toLocaleDateString('es-ES') : 'Sin fecha'}
                     </TableCell>
                     <TableCell className="font-mono font-medium">
-                      {factura.referencia}
+                      {factura.referencia || 'Sin referencia'}
                     </TableCell>
-                    <TableCell>{factura.nombrePagador}</TableCell>
-                    <TableCell>{getClienteName(factura.clienteId)}</TableCell>
+                    <TableCell>{getClienteName(factura.id_campana)}</TableCell>
                     <TableCell>
-                      {factura.precio.toLocaleString('es-ES', { 
+                      {(factura.precio || 0).toLocaleString('es-ES', { 
                         style: 'currency', 
                         currency: 'EUR' 
                       })}
                     </TableCell>
                     <TableCell>
-                      {factura.iva.toLocaleString('es-ES', { 
+                      {(factura.iva || 0).toLocaleString('es-ES', { 
                         style: 'currency', 
                         currency: 'EUR' 
                       })}
                     </TableCell>
                     <TableCell className="font-bold">
-                      {(factura.precio + factura.iva).toLocaleString('es-ES', { 
+                      {((factura.precio || 0) + (factura.iva || 0)).toLocaleString('es-ES', { 
                         style: 'currency', 
                         currency: 'EUR' 
                       })}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getEstadoBadgeVariant(factura.estadoCobro)}>
-                        {factura.estadoCobro}
+                      <Badge variant={getEstadoBadgeVariant(factura.estado_cobro)}>
+                        {factura.estado_cobro || "Sin estado"}
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -424,26 +420,26 @@ export default function Facturacion() {
         </CardContent>
       </Card>
 
+      {/* TODO: Implement FacturaDetailsModal and FacturaForm for new schema */}
       {selectedFactura && (
-        <FacturaDetailsModal
-          factura={selectedFactura}
-          onClose={() => setSelectedFactura(null)}
-          onEdit={(factura) => {
-            setSelectedFactura(null);
-            handleEdit(factura);
-          }}
-          onDelete={(id) => {
-            handleDelete(id);
-            setSelectedFactura(null);
-          }}
-        />
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-card rounded-lg shadow-elegant max-w-md w-full p-6">
+            <h3 className="font-semibold mb-4">Detalles de Factura</h3>
+            <p className="mb-4">Referencia: {selectedFactura.referencia}</p>
+            <Button onClick={() => setSelectedFactura(null)}>Cerrar</Button>
+          </div>
+        </div>
       )}
 
-      <FacturaForm 
-        isOpen={showForm}
-        onClose={handleCloseForm}
-        factura={editingFactura || undefined}
-      />
+      {showForm && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-card rounded-lg shadow-elegant max-w-md w-full p-6">
+            <h3 className="font-semibold mb-4">Formulario de Factura</h3>
+            <p className="mb-4">Funcionalidad pendiente de implementar</p>
+            <Button onClick={handleCloseForm}>Cerrar</Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
