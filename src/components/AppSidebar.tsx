@@ -1,4 +1,4 @@
-import { BarChart3, FileText, Users, Calendar, Euro, Home } from "lucide-react";
+import { BarChart3, FileText, Users, Calendar, Euro, Home, UserCheck } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 
 import {
@@ -20,6 +20,7 @@ const menuItems = [
   { title: "Contabilidad", url: "/contabilidad", icon: BarChart3 },
   { title: "Facturación", url: "/facturacion", icon: FileText },
   { title: "Clientes", url: "/clientes", icon: Users },
+  { title: "Colaboradores", url: "/colaboradores", icon: UserCheck },
 ];
 
 export function AppSidebar() {
