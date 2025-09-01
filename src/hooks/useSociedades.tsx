@@ -18,7 +18,7 @@ export const useSociedades = () => {
   const fetchSociedades = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('sociedades')
         .select('*')
         .order('nombre_fiscal', { ascending: true });
@@ -34,14 +34,17 @@ export const useSociedades = () => {
   };
 
   // Create new sociedad
-  const createSociedad = async (sociedadData: Omit<Sociedad, 'id'>) => {
+  const createSociedad = async (sociedadData: { nombre_fiscal?: string; cif?: string; direccion_1?: string; direccion_2?: string; }) => {
     try {
       const dataWithId = {
-        ...sociedadData,
-        id: Date.now().toString() // Generate simple ID
+        id: Date.now().toString(),
+        nombre_fiscal: sociedadData.nombre_fiscal,
+        cif: sociedadData.cif,
+        direccion_1: sociedadData.direccion_1 ?? null,
+        direccion_2: sociedadData.direccion_2 ?? null,
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('sociedades')
         .insert([dataWithId])
         .select()
@@ -49,22 +52,28 @@ export const useSociedades = () => {
 
       if (error) throw error;
       
-      setSociedades(prev => [...prev, data]);
+      setSociedades(prev => [...prev, data as Sociedad]);
       toast.success('Sociedad creada exitosamente');
-      return { data, error: null };
+      return { data, error: null } as const;
     } catch (error: any) {
       console.error('Error creating sociedad:', error);
       toast.error('Error al crear sociedad: ' + error.message);
-      return { data: null, error };
+      return { data: null, error } as const;
     }
   };
 
   // Update existing sociedad
-  const updateSociedad = async (id: string, updates: Partial<Sociedad>) => {
+  const updateSociedad = async (id: string, updates: { nombre_fiscal?: string; cif?: string; direccion_1?: string | null; direccion_2?: string | null; }) => {
     try {
-      const { data, error } = await supabase
+      const payload = {
+        ...updates,
+        direccion_1: updates.direccion_1 ?? null,
+        direccion_2: updates.direccion_2 ?? null,
+      };
+
+      const { data, error } = await (supabase as any)
         .from('sociedades')
-        .update(updates)
+        .update(payload)
         .eq('id', id)
         .select()
         .single();
@@ -72,21 +81,21 @@ export const useSociedades = () => {
       if (error) throw error;
       
       setSociedades(prev => prev.map(sociedad => 
-        sociedad.id === id ? data : sociedad
+        sociedad.id === id ? (data as Sociedad) : sociedad
       ));
       toast.success('Sociedad actualizada exitosamente');
-      return { data, error: null };
+      return { data, error: null } as const;
     } catch (error: any) {
       console.error('Error updating sociedad:', error);
       toast.error('Error al actualizar sociedad: ' + error.message);
-      return { data: null, error };
+      return { data: null, error } as const;
     }
   };
 
   // Delete sociedad
   const deleteSociedad = async (id: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('sociedades')
         .delete()
         .eq('id', id);

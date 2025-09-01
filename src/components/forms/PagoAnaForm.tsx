@@ -67,16 +67,16 @@ export function PagoAnaForm({ isOpen, onClose, pago }: PagoAnaFormProps) {
   const onSubmit = async (data: PagoAnaFormData) => {
     setIsSubmitting(true);
     try {
-      const pagoData = {
-        ...data,
-        id: pago?.id || Date.now().toString(), // Generate simple ID for new records
-      };
-
       let result;
       if (pago) {
-        result = await updatePagoAna(pago.id, pagoData);
+        result = await updatePagoAna(pago.id, data);
       } else {
-        result = await createPagoAna(pagoData);
+        result = await createPagoAna({
+          fecha: data.fecha,
+          importe: data.importe,
+          referencia: data.referencia ?? '',
+          modalidad: data.modalidad,
+        });
       }
 
       if (result.error) {

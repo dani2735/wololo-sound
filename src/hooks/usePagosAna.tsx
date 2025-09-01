@@ -27,13 +27,13 @@ export const usePagosAna = () => {
 
   const fetchPagosAna = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('pagos_ana')
         .select('*')
         .order('fecha', { ascending: false });
 
       if (error) throw error;
-      setPagosAna(data || []);
+      setPagosAna((data || []) as PagoAna[]);
     } catch (error: any) {
       console.error('Error fetching pagos ana:', error);
       toast.error('Error al cargar pagos: ' + error.message);
@@ -42,7 +42,7 @@ export const usePagosAna = () => {
 
   const fetchCampanasPendientesPago = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('campanas')
         .select('*')
         .gt('cobro_ana', 0)
@@ -50,21 +50,24 @@ export const usePagosAna = () => {
         .order('fecha', { ascending: false });
 
       if (error) throw error;
-      setCampanasPendientesPago(data || []);
+      setCampanasPendientesPago((data || []) as Campana[]);
     } catch (error: any) {
       console.error('Error fetching campañas pendientes pago:', error);
       toast.error('Error al cargar campañas pendientes: ' + error.message);
     }
   };
 
-  const createPagoAna = async (pagoData: Omit<PagoAna, 'id'>) => {
+  const createPagoAna = async (pagoData: { fecha: string; importe: number; referencia?: string | null; modalidad: string; }) => {
     try {
       const dataWithId = {
-        ...pagoData,
-        id: Date.now().toString()
+        id: Date.now().toString(),
+        fecha: pagoData.fecha,
+        importe: pagoData.importe,
+        referencia: pagoData.referencia ?? '',
+        modalidad: pagoData.modalidad,
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('pagos_ana')
         .insert([dataWithId])
         .select()
@@ -72,19 +75,19 @@ export const usePagosAna = () => {
 
       if (error) throw error;
       
-      setPagosAna(prev => [data, ...prev]);
+      setPagosAna((prev) => [data as PagoAna, ...prev]);
       toast.success('Pago registrado exitosamente');
-      return { data, error: null };
+      return { data, error: null } as const;
     } catch (error: any) {
       console.error('Error creating pago ana:', error);
       toast.error('Error al registrar pago: ' + error.message);
-      return { data: null, error };
+      return { data: null, error } as const;
     }
   };
 
   const updatePagoAna = async (id: string, updates: Partial<PagoAna>) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('pagos_ana')
         .update(updates)
         .eq('id', id)
@@ -93,51 +96,49 @@ export const usePagosAna = () => {
 
       if (error) throw error;
       
-      setPagosAna(prev => prev.map(pago => 
-        pago.id === id ? data : pago
-      ));
+      setPagosAna((prev) => prev.map((pago) => (pago.id === id ? (data as PagoAna) : pago)));
       toast.success('Pago actualizado exitosamente');
-      return { data, error: null };
+      return { data, error: null } as const;
     } catch (error: any) {
       console.error('Error updating pago ana:', error);
       toast.error('Error al actualizar pago: ' + error.message);
-      return { data: null, error };
+      return { data: null, error } as const;
     }
   };
 
   const deletePagoAna = async (id: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('pagos_ana')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
       
-      setPagosAna(prev => prev.filter(pago => pago.id !== id));
+      setPagosAna((prev) => prev.filter((pago) => pago.id !== id));
       toast.success('Pago eliminado exitosamente');
-      return { error: null };
+      return { error: null } as const;
     } catch (error: any) {
       console.error('Error deleting pago ana:', error);
       toast.error('Error al eliminar pago: ' + error.message);
-      return { error };
+      return { error } as const;
     }
   };
 
   const asociarCampanasAPago = async (pagoId: string, campanaIds: string[]) => {
     try {
-      const detalleData = campanaIds.map(campanaId => ({
+      const detalleData = campanaIds.map((campanaId) => ({
         id_pago: pagoId,
-        id_campana: campanaId
+        id_campana: campanaId,
       }));
 
-      const { error: detalleError } = await supabase
+      const { error: detalleError } = await (supabase as any)
         .from('pagos_ana_detalle')
         .insert(detalleData);
 
       if (detalleError) throw detalleError;
 
-      const { error: campanaError } = await supabase
+      const { error: campanaError } = await (supabase as any)
         .from('campanas')
         .update({ estado_pago_ana: 'Pagado' })
         .in('id', campanaIds);
@@ -147,11 +148,11 @@ export const usePagosAna = () => {
       await Promise.all([fetchCampanasPendientesPago(), fetchPagosAna()]);
       
       toast.success(`${campanaIds.length} campañas asociadas al pago exitosamente`);
-      return { error: null };
+      return { error: null } as const;
     } catch (error: any) {
       console.error('Error associating campañas to pago:', error);
       toast.error('Error al asociar campañas: ' + error.message);
-      return { error };
+      return { error } as const;
     }
   };
 
