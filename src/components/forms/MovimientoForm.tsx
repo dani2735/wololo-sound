@@ -19,16 +19,19 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useAppStore } from "@/stores/useAppStore";
-import { MovimientoContable, TipoMovimiento, CuentaMovimiento } from "@/types";
+import { useContabilidad } from "@/hooks/useContabilidad";
+import { useClientes } from "@/hooks/useClientes";
+import { Tables } from "@/integrations/supabase/types";
+
+type Movimiento = Tables<'contabilidad'>;
 
 const formSchema = z.object({
   fecha: z.string().min(1, "La fecha es requerida"),
   tipo: z.enum(["cobro", "pago"]),
   pagador: z.string().min(1, "El pagador es requerido"),
-  clienteId: z.string().min(1, "Debe seleccionar un cliente"),
-  precio: z.number().min(0, "El precio debe ser mayor que 0"),
-  cuenta: z.enum(["Paypal", "Cuenta SL"]),
+  clienteId: z.string().optional(),
+  importe: z.number().min(0, "El importe debe ser mayor que 0"),
+  modalidad: z.enum(["Paypal", "Cuenta SL"]),
   detalles: z.string().optional(),
 });
 
@@ -37,42 +40,50 @@ type FormData = z.infer<typeof formSchema>;
 interface MovimientoFormProps {
   isOpen: boolean;
   onClose: () => void;
-  tipo: TipoMovimiento;
-  movimiento?: MovimientoContable;
+  tipo: "cobro" | "pago";
+  movimiento?: Movimiento;
 }
 
 export function MovimientoForm({ isOpen, onClose, tipo, movimiento }: MovimientoFormProps) {
-  const { clientes, addMovimiento, updateMovimiento } = useAppStore();
+  const { clientes } = useClientes();
+  const { createMovimiento, updateMovimiento } = useContabilidad();
   const isEditing = !!movimiento;
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     values: {
       fecha: movimiento?.fecha || new Date().toISOString().split('T')[0],
-      tipo: movimiento?.tipo || tipo,
+      tipo: movimiento?.tipo as "cobro" | "pago" || tipo,
       pagador: movimiento?.pagador || "",
-      clienteId: movimiento?.clienteId || "",
-      precio: movimiento?.precio || 0,
-      cuenta: movimiento?.cuenta || "Cuenta SL",
+      clienteId: "",
+      importe: movimiento?.importe || 0,
+      modalidad: (movimiento?.modalidad || "Cuenta SL") as "Paypal" | "Cuenta SL",
       detalles: movimiento?.detalles || "",
     },
   });
 
-  const onSubmit = (data: FormData) => {
+  const onSubmit = async (data: FormData) => {
     if (isEditing && movimiento) {
-      updateMovimiento(movimiento.id, data);
-    } else {
-      const newMovimiento: MovimientoContable = {
-        id: `mov_${Date.now()}`,
+      const movimientoData = {
         fecha: data.fecha,
         tipo: data.tipo,
         pagador: data.pagador,
-        clienteId: data.clienteId,
-        precio: data.precio,
-        cuenta: data.cuenta,
+        importe: data.importe,
+        modalidad: data.modalidad,
         detalles: data.detalles,
       };
-      addMovimiento(newMovimiento);
+      await updateMovimiento(movimiento.id, movimientoData);
+    } else {
+      const movimientoData = {
+        id: crypto.randomUUID(),
+        fecha: data.fecha,
+        tipo: data.tipo,
+        pagador: data.pagador,
+        importe: data.importe,
+        modalidad: data.modalidad,
+        detalles: data.detalles,
+      };
+      await createMovimiento(movimientoData);
     }
     
     form.reset();
@@ -122,35 +133,10 @@ export function MovimientoForm({ isOpen, onClose, tipo, movimiento }: Movimiento
 
             <FormField
               control={form.control}
-              name="clienteId"
+              name="importe"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Cliente</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar cliente" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {clientes.map((cliente) => (
-                        <SelectItem key={cliente.id} value={cliente.id}>
-                          {cliente.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="precio"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Precio (€)</FormLabel>
+                  <FormLabel>Importe (€)</FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
@@ -168,10 +154,10 @@ export function MovimientoForm({ isOpen, onClose, tipo, movimiento }: Movimiento
 
             <FormField
               control={form.control}
-              name="cuenta"
+              name="modalidad"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Cuenta</FormLabel>
+                  <FormLabel>Modalidad</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>

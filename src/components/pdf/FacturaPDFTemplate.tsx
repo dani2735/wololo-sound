@@ -1,5 +1,8 @@
-import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
-import { Factura } from '@/types';
+import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { Tables } from '@/integrations/supabase/types';
+
+type Factura = Tables<'facturas'>;
+type Sociedad = Tables<'sociedades'>;
 
 // Estilos para el PDF
 const styles = StyleSheet.create({
@@ -48,198 +51,237 @@ const styles = StyleSheet.create({
   clientInfo: {
     flex: 1,
   },
-  dateInfo: {
+  invoiceInfo: {
     flex: 1,
-    textAlign: 'right',
+    alignItems: 'flex-end',
   },
   sectionTitle: {
     fontSize: 12,
     fontWeight: 'bold',
     marginBottom: 5,
-    color: '#000000',
-  },
-  clientText: {
-    fontSize: 10,
-    lineHeight: 1.4,
     color: '#333333',
   },
-  table: {
-    marginBottom: 20,
+  text: {
+    fontSize: 10,
+    lineHeight: 1.5,
+    color: '#666666',
   },
-  tableHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#1e88e5',
-    color: '#ffffff',
-    padding: 8,
+  table: {
+    width: 'auto',
+    borderStyle: 'solid',
+    borderWidth: 1,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+    borderColor: '#cccccc',
+    marginTop: 20,
   },
   tableRow: {
+    margin: 'auto',
     flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eeeeee',
-    paddingVertical: 8,
-    paddingHorizontal: 8,
+  },
+  tableHeader: {
+    backgroundColor: '#f0f0f0',
+  },
+  tableCol: {
+    width: '25%',
+    borderStyle: 'solid',
+    borderWidth: 1,
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
+    borderColor: '#cccccc',
   },
   tableColDescription: {
-    flex: 3,
+    width: '50%',
+    borderStyle: 'solid',
+    borderWidth: 1,
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
+    borderColor: '#cccccc',
   },
-  tableColQty: {
-    flex: 1,
+  tableCell: {
+    margin: 'auto',
+    marginTop: 5,
+    marginBottom: 5,
+    fontSize: 10,
     textAlign: 'center',
   },
-  tableColPrice: {
-    flex: 1,
-    textAlign: 'right',
-  },
-  tableColTotal: {
-    flex: 1,
-    textAlign: 'right',
-  },
-  tableText: {
+  tableCellLeft: {
+    margin: 'auto',
+    marginTop: 5,
+    marginBottom: 5,
     fontSize: 10,
+    textAlign: 'left',
+    paddingLeft: 5,
   },
-  tableHeaderText: {
+  summarySection: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 20,
+  },
+  summaryBox: {
+    width: '40%',
+    borderWidth: 1,
+    borderColor: '#cccccc',
+    borderStyle: 'solid',
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#cccccc',
+    borderBottomStyle: 'solid',
+    padding: 5,
+  },
+  summaryLabel: {
+    flex: 1,
     fontSize: 10,
     fontWeight: 'bold',
   },
-  totalsSection: {
-    marginTop: 20,
-    alignItems: 'flex-end',
+  summaryValue: {
+    flex: 1,
+    fontSize: 10,
+    textAlign: 'right',
   },
   totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: 200,
-    paddingVertical: 3,
-  },
-  totalLabel: {
-    fontSize: 11,
-    textAlign: 'right',
-  },
-  totalValue: {
-    fontSize: 11,
-    textAlign: 'right',
-  },
-  finalTotal: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    borderTopWidth: 1,
-    borderTopColor: '#000000',
-    paddingTop: 5,
+    backgroundColor: '#f0f0f0',
   },
   footer: {
     position: 'absolute',
+    fontSize: 10,
     bottom: 30,
     left: 30,
     right: 30,
-  },
-  footerText: {
-    fontSize: 8,
-    color: '#666666',
     textAlign: 'center',
-    lineHeight: 1.3,
+    color: '#999999',
   },
 });
 
 interface FacturaPDFTemplateProps {
   factura: Factura;
   clienteNombre: string;
+  sociedad?: Sociedad;
 }
 
-export const FacturaPDFTemplate = ({ factura, clienteNombre }: FacturaPDFTemplateProps) => {
-  const fechaExpedicion = new Date(factura.fecha).toLocaleDateString('es-ES');
-  const total = factura.precio + factura.iva;
+export function FacturaPDFTemplate({ factura, clienteNombre, sociedad }: FacturaPDFTemplateProps) {
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('es-ES');
+  };
+
+  const formatCurrency = (amount: number) => {
+    return `${amount.toFixed(2)} €`;
+  };
+
+  const total = (factura.precio || 0) + (factura.iva || 0) - (factura.irpf || 0);
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.logo}>
-            <Text style={{ color: '#ffffff', fontSize: 20, textAlign: 'center', paddingTop: 8 }}>W</Text>
-          </View>
+          <View style={styles.logo}></View>
           <Text style={styles.title}>FACTURA</Text>
         </View>
 
         {/* Company Info */}
         <View style={styles.companyInfo}>
-          <Text style={styles.companyName}>WOLOLO SOUND, S.L.</Text>
+          <Text style={styles.companyName}>WOLOLO SOUND S.L.</Text>
           <Text style={styles.companyAddress}>
-            PASEO DE ARROYOMOLINOS, 54, 6ºA{'\n'}
-            28938, MÓSTOLES (MADRID){'\n'}
-            NIF: B22542211
+            C/ Ejemplo 123, 28001 Madrid{'\n'}
+            CIF: B12345678{'\n'}
+            Tel: 600 000 000 | Email: info@wololosound.com
           </Text>
         </View>
 
-        {/* Client and Date Info */}
+        {/* Client and Invoice Info */}
         <View style={styles.clientSection}>
           <View style={styles.clientInfo}>
-            <Text style={styles.sectionTitle}>PARA</Text>
-            <Text style={styles.clientText}>
-              {factura.nombrePagador}{'\n'}
-              {factura.nif}{'\n'}
-              {factura.direccion}
+            <Text style={styles.sectionTitle}>FACTURAR A:</Text>
+            <Text style={styles.text}>
+              {sociedad?.nombre_fiscal || clienteNombre}{'\n'}
+              {sociedad?.cif ? `CIF: ${sociedad.cif}` : ''}{'\n'}
+              {sociedad?.direccion_1 || ''}{'\n'}
+              {sociedad?.direccion_2 || ''}
             </Text>
           </View>
-          <View style={styles.dateInfo}>
-            <Text style={styles.sectionTitle}>FECHA DE EXPEDICIÓN</Text>
-            <Text style={styles.clientText}>{fechaExpedicion}</Text>
-            <Text style={[styles.sectionTitle, { marginTop: 10 }]}>NÚMERO DE EXPEDICIÓN</Text>
-            <Text style={styles.clientText}>{factura.referencia}</Text>
+          <View style={styles.invoiceInfo}>
+            <Text style={styles.sectionTitle}>DATOS DE LA FACTURA:</Text>
+            <Text style={styles.text}>
+              Nº Factura: {factura.referencia || 'Sin referencia'}{'\n'}
+              Fecha: {formatDate(factura.fecha)}{'\n'}
+              {factura.fecha_cobro ? `Fecha Cobro: ${formatDate(factura.fecha_cobro)}` : 'Sin cobrar'}
+            </Text>
           </View>
         </View>
 
         {/* Services Table */}
         <View style={styles.table}>
-          <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderText, styles.tableColDescription]}>DESCRIPCIÓN</Text>
-            <Text style={[styles.tableHeaderText, styles.tableColQty]}>CANT.</Text>
-            <Text style={[styles.tableHeaderText, styles.tableColPrice]}>PRECIO</Text>
-            <Text style={[styles.tableHeaderText, styles.tableColTotal]}>TOTAL</Text>
+          <View style={[styles.tableRow, styles.tableHeader]}>
+            <View style={styles.tableColDescription}>
+              <Text style={styles.tableCell}>CONCEPTO</Text>
+            </View>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCell}>CANTIDAD</Text>
+            </View>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCell}>PRECIO</Text>
+            </View>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCell}>TOTAL</Text>
+            </View>
           </View>
           <View style={styles.tableRow}>
-            <Text style={[styles.tableText, styles.tableColDescription]}>
-              {factura.datosAcciones}
-            </Text>
-            <Text style={[styles.tableText, styles.tableColQty]}>1</Text>
-            <Text style={[styles.tableText, styles.tableColPrice]}>
-              {factura.precio.toFixed(2)} €
-            </Text>
-            <Text style={[styles.tableText, styles.tableColTotal]}>
-              {factura.precio.toFixed(2)} €
-            </Text>
+            <View style={styles.tableColDescription}>
+              <Text style={styles.tableCellLeft}>
+                {factura.detalles || 'Servicios de comunicación y prensa'}
+              </Text>
+            </View>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCell}>1</Text>
+            </View>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCell}>{formatCurrency(factura.precio || 0)}</Text>
+            </View>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCell}>{formatCurrency(factura.precio || 0)}</Text>
+            </View>
           </View>
         </View>
 
-        {/* Totals */}
-        <View style={styles.totalsSection}>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>BASE IMPONIBLE</Text>
-            <Text style={styles.totalValue}>{factura.precio.toFixed(2)} €</Text>
-          </View>
-          {factura.iva > 0 && (
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>IVA (+21%)</Text>
-              <Text style={styles.totalValue}>{factura.iva.toFixed(2)} €</Text>
+        {/* Summary */}
+        <View style={styles.summarySection}>
+          <View style={styles.summaryBox}>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Base Imponible:</Text>
+              <Text style={styles.summaryValue}>{formatCurrency(factura.precio || 0)}</Text>
             </View>
-          )}
-          <View style={[styles.totalRow, styles.finalTotal]}>
-            <Text style={styles.totalLabel}>CANTIDAD A PAGAR</Text>
-            <Text style={styles.totalValue}>{total.toFixed(2)} €</Text>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>IVA (21%):</Text>
+              <Text style={styles.summaryValue}>{formatCurrency(factura.iva || 0)}</Text>
+            </View>
+            {(factura.irpf || 0) > 0 && (
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>IRPF:</Text>
+                <Text style={styles.summaryValue}>-{formatCurrency(factura.irpf || 0)}</Text>
+              </View>
+            )}
+            <View style={[styles.summaryRow, styles.totalRow]}>
+              <Text style={styles.summaryLabel}>TOTAL:</Text>
+              <Text style={styles.summaryValue}>{formatCurrency(total)}</Text>
+            </View>
           </View>
         </View>
+
+        {factura.comentarios && (
+          <View style={{ marginTop: 20 }}>
+            <Text style={styles.sectionTitle}>OBSERVACIONES:</Text>
+            <Text style={styles.text}>{factura.comentarios}</Text>
+          </View>
+        )}
 
         {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            NOMBRE DE CUENTA{'\n'}
-            WOLOLO SOUND, SL{'\n\n'}
-            NÚMERO DE CUENTA{'\n'}
-            ES23 0081 7125 9600 0192 7002 (SWIFT: BSABESBBXXX){'\n\n'}
-            Wololo Sound, S.L. – NIF: B22542211 – Inscrita en el Registro Mercantil de Madrid,{'\n'}
-            Hoja M-856191 IRUS: 1000451221650 Tomo electrónico Folio electrónico
-          </Text>
-        </View>
+        <Text style={styles.footer}>
+          Esta factura se ha generado electrónicamente y es válida sin necesidad de firma.
+        </Text>
       </Page>
     </Document>
   );
-};
+}

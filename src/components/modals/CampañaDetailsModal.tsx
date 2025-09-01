@@ -1,27 +1,29 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, FileText } from "lucide-react";
-import { CampañaPrensa } from "@/types";
-import { useAppStore } from "@/stores/useAppStore";
+import { useClientes } from "@/hooks/useClientes";
+import { Tables } from "@/integrations/supabase/types";
+
+type Campana = Tables<'campanas'>;
 
 interface CampañaDetailsModalProps {
-  campaña: CampañaPrensa;
+  campaña: Campana;
   onClose: () => void;
-  onEdit: (campaña: CampañaPrensa) => void;
+  onEdit: (campaña: Campana) => void;
   onDelete: (id: string) => void;
-  onFacturar: (campaña: CampañaPrensa) => void;
+  onFacturar?: (campaña: Campana) => void;
 }
 
 export function CampañaDetailsModal({ campaña, onClose, onEdit, onDelete, onFacturar }: CampañaDetailsModalProps) {
-  const { clientes } = useAppStore();
+  const { clientes } = useClientes();
 
-  const getClienteName = (clienteId: string) => {
-    if (clienteId.startsWith('temp_')) return "cliente temporal";
+  const getClienteName = (clienteId: string | null) => {
+    if (!clienteId) return "Sin cliente";
     const cliente = clientes.find(c => c.id === clienteId);
     return cliente?.nombre || "Cliente no encontrado";
   };
 
-  const getEstadoBadgeVariant = (estado: string) => {
+  const getEstadoBadgeVariant = (estado: string | null) => {
     switch (estado) {
       case "TERMINADO": return "default";
       case "EN CURSO": return "secondary";
@@ -30,8 +32,18 @@ export function CampañaDetailsModal({ campaña, onClose, onEdit, onDelete, onFa
     }
   };
 
+  const parseAcciones = (accionesStr: string | null) => {
+    if (!accionesStr) return {};
+    try {
+      return JSON.parse(accionesStr);
+    } catch {
+      return {};
+    }
+  };
+
   const getAccionesRealizadas = () => {
     const acciones = [];
+    const accionesData = parseAcciones(campaña.acciones);
     
     const accionesNames = {
       instagramPost: "IG Post",
@@ -48,14 +60,14 @@ export function CampañaDetailsModal({ campaña, onClose, onEdit, onDelete, onFa
       youtubeEntrevista: "YouTube Entrevista",
     };
 
-    for (const [key, value] of Object.entries(campaña.acciones)) {
+    for (const [key, value] of Object.entries(accionesData)) {
       if (key !== 'otrasAcciones' && typeof value === 'number' && value > 0) {
-        acciones.push(`${accionesNames[key as keyof typeof accionesNames]}: ${value}`);
+        acciones.push(`${accionesNames[key as keyof typeof accionesNames] || key}: ${value}`);
       }
     }
 
-    if (campaña.acciones.otrasAcciones) {
-      acciones.push(`Otras: ${campaña.acciones.otrasAcciones}`);
+    if (accionesData.otrasAcciones) {
+      acciones.push(`Otras: ${accionesData.otrasAcciones}`);
     }
 
     return acciones;
@@ -76,18 +88,15 @@ export function CampañaDetailsModal({ campaña, onClose, onEdit, onDelete, onFa
             <div>
               <h3 className="font-semibold mb-3">Información General</h3>
               <div className="space-y-2">
-                <p><strong>Fecha Creación:</strong> {new Date(campaña.fechaCreacion).toLocaleDateString('es-ES')}</p>
-                <p><strong>Cliente:</strong> {getClienteName(campaña.clienteId)}</p>
+                <p><strong>Fecha:</strong> {new Date(campaña.fecha).toLocaleDateString('es-ES')}</p>
+                <p><strong>Cliente:</strong> {getClienteName(campaña.id_cliente)}</p>
                 {campaña.detalles && <p><strong>Detalles:</strong> {campaña.detalles}</p>}
-                <p><strong>Estado:</strong> <Badge variant={getEstadoBadgeVariant(campaña.estado)}>{campaña.estado}</Badge></p>
-                <p><strong>Tipo de Cobro:</strong> <Badge variant="outline">{campaña.tipoCobro}</Badge></p>
-                <p><strong>Estado Facturación:</strong> <Badge variant={campaña.estadoFacturacion === "Facturado" ? "default" : "destructive"}>{campaña.estadoFacturacion}</Badge></p>
-                {campaña.fechaFacturacion && (
-                  <p><strong>Fecha Facturación:</strong> {new Date(campaña.fechaFacturacion).toLocaleDateString('es-ES')}</p>
-                )}
-                <p><strong>Estado Cobro:</strong> <Badge variant={campaña.estadoCobro === "Cobrado" ? "default" : "destructive"}>{campaña.estadoCobro}</Badge></p>
-                {campaña.fechaCobro && (
-                  <p><strong>Fecha Cobro:</strong> {new Date(campaña.fechaCobro).toLocaleDateString('es-ES')}</p>
+                <p><strong>Estado:</strong> <Badge variant={getEstadoBadgeVariant(campaña.estado_campana)}>{campaña.estado_campana}</Badge></p>
+                <p><strong>Tipo de Cobro:</strong> <Badge variant="outline">{campaña.tipo_cobro}</Badge></p>
+                <p><strong>Estado Facturación:</strong> <Badge variant={campaña.estado_facturacion === "Facturado" ? "default" : "destructive"}>{campaña.estado_facturacion}</Badge></p>
+                <p><strong>Estado Cobro:</strong> <Badge variant={campaña.estado_cobro === "Cobrado" ? "default" : "destructive"}>{campaña.estado_cobro}</Badge></p>
+                {campaña.estado_pago_ana && (
+                  <p><strong>Estado Pago Ana:</strong> <Badge variant={campaña.estado_pago_ana === "Pagado" ? "default" : "destructive"}>{campaña.estado_pago_ana}</Badge></p>
                 )}
               </div>
             </div>
@@ -95,23 +104,33 @@ export function CampañaDetailsModal({ campaña, onClose, onEdit, onDelete, onFa
             <div>
               <h3 className="font-semibold mb-3">Importes</h3>
               <div className="space-y-2">
-                <p><strong>Precio:</strong> <span className="font-bold text-lg">{campaña.precio.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</span></p>
-                {campaña.cobroAna > 0 && (
-                  <p><strong>Cobro Ana:</strong> {campaña.cobroAna.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p>
+                <p><strong>Precio:</strong> <span className="font-bold text-lg">{(campaña.precio || 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</span></p>
+                {(campaña.cobro_ana || 0) > 0 && (
+                  <p><strong>Cobro Ana:</strong> {(campaña.cobro_ana || 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p>
                 )}
+                {(campaña.cobro_wololo_sound || 0) > 0 && (
+                  <p><strong>Cobro Wololo Sound:</strong> {(campaña.cobro_wololo_sound || 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p>
+                )}
+                <p><strong>Importe Facturado:</strong> {(campaña.importe_facturado || 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p>
+                <p><strong>Importe Cobrado:</strong> {(campaña.importe_cobrado || 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p>
+                <p><strong>Pendiente Facturar:</strong> {(campaña.importe_pendiente_facturar || 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p>
+                <p><strong>Pendiente Cobrar:</strong> {(campaña.importe_pendiente_cobrar || 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p>
               </div>
             </div>
           </div>
 
-
           <div className="mt-4">
             <h3 className="font-semibold mb-2">Acciones</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {getAccionesRealizadas().map((accion, index) => (
-                <div key={index} className="text-sm p-2 bg-accent/30 rounded">
-                  {accion}
-                </div>
-              ))}
+              {getAccionesRealizadas().length > 0 ? (
+                getAccionesRealizadas().map((accion, index) => (
+                  <div key={index} className="text-sm p-2 bg-accent/30 rounded">
+                    {accion}
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">No hay acciones registradas</p>
+              )}
             </div>
           </div>
 
@@ -122,35 +141,8 @@ export function CampañaDetailsModal({ campaña, onClose, onEdit, onDelete, onFa
             </div>
           )}
 
-          {campaña.estadoFacturacion === "Facturado" && (
-            <div className="mt-4 p-4 bg-accent/30 rounded-lg">
-              <h3 className="font-semibold mb-2">Información de Facturación</h3>
-              <div className="space-y-1 text-sm">
-                <p><strong>Referencia:</strong> <span className="font-mono">{campaña.referenciaFactura}</span></p>
-                <p><strong>Fecha Facturación:</strong> {campaña.fechaFacturacion ? new Date(campaña.fechaFacturacion).toLocaleDateString('es-ES') : 'No disponible'}</p>
-                {(() => {
-                  const { facturas } = useAppStore.getState();
-                  const factura = facturas.find(f => f.referencia === campaña.referenciaFactura);
-                  return factura ? (
-                    <>
-                      <p><strong>Nombre Pagador:</strong> {factura.nombrePagador}</p>
-                      <p><strong>CIF:</strong> {factura.nif}</p>
-                      <p><strong>Dirección:</strong> {factura.direccion}</p>
-                    </>
-                  ) : (
-                    <>
-                      <p><strong>Nombre Pagador:</strong> {campaña.nombrePagador}</p>
-                      <p><strong>CIF:</strong> {campaña.nif}</p>
-                      <p><strong>Dirección:</strong> {campaña.direccion}</p>
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
-          )}
-
           <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
-            {campaña.estadoFacturacion === "Sin facturar" && campaña.tipoCobro.includes("Factura") && (
+            {campaña.estado_facturacion === "Sin facturar" && campaña.tipo_cobro?.includes("Factura") && onFacturar && (
               <Button 
                 className="bg-gradient-primary"
                 onClick={() => onFacturar(campaña)}

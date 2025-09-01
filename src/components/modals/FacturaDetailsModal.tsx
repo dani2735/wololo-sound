@@ -1,12 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Edit, Trash2, Download } from "lucide-react";
-import { Factura, CuentaMovimiento } from "@/types";
-import { useAppStore } from "@/stores/useAppStore";
-import { useState } from "react";
+import { useClientes } from "@/hooks/useClientes";
+import { Tables } from "@/integrations/supabase/types";
 import { pdf } from "@react-pdf/renderer";
 import { FacturaPDFTemplate } from "@/components/pdf/FacturaPDFTemplate";
+
+type Factura = Tables<'facturas'>;
 
 interface FacturaDetailsModalProps {
   factura: Factura;
@@ -16,24 +16,23 @@ interface FacturaDetailsModalProps {
 }
 
 export function FacturaDetailsModal({ factura, onClose, onEdit, onDelete }: FacturaDetailsModalProps) {
-  const { clientes, marcarFacturaCobrada } = useAppStore();
-  const [cuentaCobro, setCuentaCobro] = useState<CuentaMovimiento>("Cuenta SL");
+  const { clientes } = useClientes();
 
-  const getClienteName = (clienteId: string) => {
+  const getClienteName = (clienteId: string | null) => {
+    if (!clienteId) return "Sin cliente";
     const cliente = clientes.find(c => c.id === clienteId);
     return cliente?.nombre || "Cliente no encontrado";
   };
 
-  const getEstadoBadgeVariant = (estado: string) => {
+  const getEstadoBadgeVariant = (estado: string | null) => {
     return estado === "Cobrado" ? "default" : "destructive";
   };
 
   const downloadPDF = async () => {
-    const clienteSeleccionado = clientes.find(c => c.id === factura.clienteId);
     const blob = await pdf(
       <FacturaPDFTemplate 
         factura={factura} 
-        clienteNombre={clienteSeleccionado?.nombre || "Cliente"} 
+        clienteNombre={getClienteName(factura.id_sociedad)} 
       />
     ).toBlob();
     
@@ -62,18 +61,11 @@ export function FacturaDetailsModal({ factura, onClose, onEdit, onDelete }: Fact
               <div className="space-y-2">
                 <p><strong>Referencia:</strong> <span className="font-mono">{factura.referencia}</span></p>
                 <p><strong>Fecha:</strong> {new Date(factura.fecha).toLocaleDateString('es-ES')}</p>
-                <p><strong>Cliente:</strong> {getClienteName(factura.clienteId)}</p>
-                {(() => {
-                  const { campañas } = useAppStore.getState();
-                  const campaña = campañas.find(c => c.referenciaFactura === factura.referencia);
-                  return campaña?.detalles && <p><strong>Detalles:</strong> {campaña.detalles}</p>;
-                })()}
-                <p><strong>Pagador:</strong> {factura.nombrePagador}</p>
-                <p><strong>NIF:</strong> <span className="font-mono">{factura.nif}</span></p>
-                <p><strong>Dirección:</strong> {factura.direccion}</p>
-                <p><strong>Estado Cobro:</strong> <Badge variant={getEstadoBadgeVariant(factura.estadoCobro)}>{factura.estadoCobro}</Badge></p>
-                {factura.fechaCobro && (
-                  <p><strong>Fecha Cobro:</strong> {new Date(factura.fechaCobro).toLocaleDateString('es-ES')}</p>
+                <p><strong>Cliente:</strong> {getClienteName(factura.id_sociedad)}</p>
+                {factura.detalles && <p><strong>Detalles:</strong> {factura.detalles}</p>}
+                <p><strong>Estado Cobro:</strong> <Badge variant={getEstadoBadgeVariant(factura.estado_cobro)}>{factura.estado_cobro || "Sin cobrar"}</Badge></p>
+                {factura.fecha_cobro && (
+                  <p><strong>Fecha Cobro:</strong> {new Date(factura.fecha_cobro).toLocaleDateString('es-ES')}</p>
                 )}
               </div>
             </div>
@@ -81,20 +73,21 @@ export function FacturaDetailsModal({ factura, onClose, onEdit, onDelete }: Fact
             <div>
               <h3 className="font-semibold mb-3">Importes</h3>
               <div className="space-y-2">
-                <p><strong>Precio:</strong> {factura.precio.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p>
-                <p><strong>IVA:</strong> {factura.iva.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p>
-                <p><strong>Total:</strong> <span className="font-bold text-lg">{(factura.precio + factura.iva).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</span></p>
+                <p><strong>Precio:</strong> {(factura.precio || 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p>
+                <p><strong>IVA:</strong> {(factura.iva || 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p>
+                <p><strong>IRPF:</strong> {(factura.irpf || 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p>
+                <p><strong>Total:</strong> <span className="font-bold text-lg">{((factura.precio || 0) + (factura.iva || 0) - (factura.irpf || 0)).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</span></p>
+                <p><strong>Pago Cliente:</strong> {(factura.pago_cliente || 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p>
               </div>
             </div>
           </div>
 
-          {factura.datosAcciones && (
+          {factura.comentarios && (
             <div className="mt-4">
-              <h3 className="font-semibold mb-2">Datos factura</h3>
-              <p className="text-sm text-muted-foreground">{factura.datosAcciones}</p>
+              <h3 className="font-semibold mb-2">Comentarios</h3>
+              <p className="text-sm text-muted-foreground">{factura.comentarios}</p>
             </div>
           )}
-
 
           <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
             <Button variant="outline" onClick={downloadPDF}>
@@ -113,17 +106,6 @@ export function FacturaDetailsModal({ factura, onClose, onEdit, onDelete }: Fact
               <Trash2 className="mr-2 h-4 w-4" />
               Borrar
             </Button>
-            {factura.estadoCobro === "Sin cobrar" && (
-              <Button 
-                className="bg-gradient-primary"
-                onClick={() => {
-                  marcarFacturaCobrada(factura.id, "Cuenta SL");
-                  onClose();
-                }}
-              >
-                Marcar como Cobrada
-              </Button>
-            )}
           </div>
         </div>
       </div>

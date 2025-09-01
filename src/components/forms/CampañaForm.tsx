@@ -23,8 +23,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Minus, Search } from "lucide-react";
-import { useAppStore } from "@/stores/useAppStore";
-import { CampañaPrensa, CampañaPrensaBase, Acciones } from "@/types";
+import { useCampanas } from "@/hooks/useCampanas";
+import { useClientes } from "@/hooks/useClientes";
+import { Tables } from "@/integrations/supabase/types";
+
+type Campana = Tables<'campanas'>;
 
 const accionesSchema = z.object({
   instagramPost: z.number().min(0),
@@ -58,24 +61,66 @@ type FormData = z.infer<typeof formSchema>;
 interface CampañaFormProps {
   isOpen: boolean;
   onClose: () => void;
-  campaña?: CampañaPrensa;
+  campaña?: Campana;
 }
 
 export function CampañaForm({ isOpen, onClose, campaña }: CampañaFormProps) {
-  const { clientes, addCampaña, updateCampaña } = useAppStore();
+  const { clientes } = useClientes();
+  const { createCampana, updateCampana } = useCampanas();
   const isEditing = !!campaña;
   const [showClienteSearch, setShowClienteSearch] = useState(false);
 
-  const getClienteNombre = (clienteId: string) => {
+  const getClienteNombre = (clienteId: string | null) => {
+    if (!clienteId) return "";
     const cliente = clientes.find(c => c.id === clienteId);
     return cliente?.nombre || "";
+  };
+
+  const parseAcciones = (accionesStr: string | null) => {
+    if (!accionesStr) {
+      return {
+        instagramPost: 0,
+        instagramFlyer: 0,
+        instagramVideo: 0,
+        instagramVideoAna: 0,
+        instagramAgendaMadrid: 0,
+        instagramAgendaIbiza: 0,
+        webArticulo: 0,
+        webEntrevista: 0,
+        webAgenda: 0,
+        podcastMencion: 0,
+        podcastEntrevista: 0,
+        youtubeEntrevista: 0,
+        otrasAcciones: "",
+      };
+    }
+
+    try {
+      return JSON.parse(accionesStr);
+    } catch {
+      return {
+        instagramPost: 0,
+        instagramFlyer: 0,
+        instagramVideo: 0,
+        instagramVideoAna: 0,
+        instagramAgendaMadrid: 0,
+        instagramAgendaIbiza: 0,
+        webArticulo: 0,
+        webEntrevista: 0,
+        webAgenda: 0,
+        podcastMencion: 0,
+        podcastEntrevista: 0,
+        youtubeEntrevista: 0,
+        otrasAcciones: "",
+      };
+    }
   };
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     values: {
-      clienteNombre: campaña ? getClienteNombre(campaña.clienteId) : "",
-      acciones: campaña?.acciones || {
+      clienteNombre: campaña ? getClienteNombre(campaña.id_cliente) : "",
+      acciones: campaña ? parseAcciones(campaña.acciones) : {
         instagramPost: 0,
         instagramFlyer: 0,
         instagramVideo: 0,
@@ -92,10 +137,10 @@ export function CampañaForm({ isOpen, onClose, campaña }: CampañaFormProps) {
       },
       detalles: campaña?.detalles || "",
       precio: campaña?.precio || 0,
-      cobroAna: campaña?.cobroAna || 0,
+      cobroAna: campaña?.cobro_ana || 0,
       comentarios: campaña?.comentarios || "",
-      estado: campaña?.estado || "EN CURSO",
-      tipoCobro: campaña?.tipoCobro || "Factura Wololo Sound",
+      estado: (campaña?.estado_campana || "EN CURSO") as "TERMINADO" | "EN CURSO" | "PENDIENTE",
+      tipoCobro: (campaña?.tipo_cobro || "Factura Wololo Sound") as "Paypal" | "Factura Wololo Sound" | "Factura Adrián Oller",
     },
   });
 
@@ -121,53 +166,57 @@ export function CampañaForm({ isOpen, onClose, campaña }: CampañaFormProps) {
     YouTube: ["youtubeEntrevista"],
   };
 
-  const updateAccionValue = (field: keyof Acciones, delta: number) => {
+  const updateAccionValue = (field: keyof typeof accionesNames, delta: number) => {
     const currentValue = form.getValues(`acciones.${field}`) as number;
     const newValue = Math.max(0, currentValue + delta);
     form.setValue(`acciones.${field}`, newValue);
   };
 
-  const onSubmit = (data: FormData) => {
-    const fechaCreacion = new Date().toISOString().split('T')[0];
-    
-    // Find or create client
+  const onSubmit = async (data: FormData) => {
+    // Find or create client ID
     let clienteId = "";
     const existingCliente = clientes.find(c => c.nombre.toLowerCase() === data.clienteNombre.toLowerCase());
     
     if (existingCliente) {
       clienteId = existingCliente.id;
     } else {
-      // Create a temporary client ID for campaigns without full client data
-      clienteId = `temp_client_${Date.now()}`;
+      // For now, we'll require an existing client
+      // TODO: Implement client creation
+      alert("Cliente no encontrado. Por favor, selecciona un cliente existente.");
+      return;
     }
     
     if (isEditing && campaña) {
-      updateCampaña(campaña.id, {
-        clienteId: clienteId,
-        acciones: data.acciones as Acciones,
+      const campanaData = {
+        fecha: new Date().toISOString().split('T')[0],
+        id_cliente: clienteId,
+        acciones: JSON.stringify(data.acciones),
         detalles: data.detalles,
         precio: data.precio,
-        cobroAna: data.cobroAna,
+        cobro_ana: data.cobroAna,
         comentarios: data.comentarios,
-        estado: data.estado,
-        tipoCobro: data.tipoCobro,
-      });
-    } else {
-      const newCampaña: CampañaPrensa = {
-        id: `camp_${Date.now()}`,
-        fechaCreacion,
-        clienteId: clienteId,
-        acciones: data.acciones as Acciones,
-        detalles: data.detalles,
-        precio: data.precio,
-        cobroAna: data.cobroAna,
-        comentarios: data.comentarios,
-        estado: data.estado,
-        tipoCobro: data.tipoCobro,
-        estadoFacturacion: "Sin facturar",
-        estadoCobro: "Sin cobrar",
+        estado_campana: data.estado,
+        tipo_cobro: data.tipoCobro,
+        estado_facturacion: "Sin facturar",
+        estado_cobro: "Sin cobrar",
       };
-      addCampaña(newCampaña);
+      await updateCampana(campaña.id, campanaData);
+    } else {
+      const campanaData = {
+        id: crypto.randomUUID(),
+        fecha: new Date().toISOString().split('T')[0],
+        id_cliente: clienteId,
+        acciones: JSON.stringify(data.acciones),
+        detalles: data.detalles,
+        precio: data.precio,
+        cobro_ana: data.cobroAna,
+        comentarios: data.comentarios,
+        estado_campana: data.estado,
+        tipo_cobro: data.tipoCobro,
+        estado_facturacion: "Sin facturar",
+        estado_cobro: "Sin cobrar",
+      };
+      await createCampana(campanaData);
     }
     
     onClose();
@@ -302,19 +351,19 @@ export function CampañaForm({ isOpen, onClose, campaña }: CampañaFormProps) {
                               variant="outline"
                               size="sm"
                               className="h-6 w-6 p-0"
-                              onClick={() => updateAccionValue(campo as keyof Acciones, -1)}
+                              onClick={() => updateAccionValue(campo as keyof typeof accionesNames, -1)}
                             >
                               <Minus className="h-3 w-3" />
                             </Button>
                             <span className="w-8 text-center text-sm font-medium">
-                              {form.watch(`acciones.${campo as keyof Acciones}`)}
+                              {form.watch(`acciones.${campo as keyof typeof accionesNames}`)}
                             </span>
                             <Button
                               type="button"
                               variant="outline"
                               size="sm"
                               className="h-6 w-6 p-0"
-                              onClick={() => updateAccionValue(campo as keyof Acciones, 1)}
+                              onClick={() => updateAccionValue(campo as keyof typeof accionesNames, 1)}
                             >
                               <Plus className="h-3 w-3" />
                             </Button>
@@ -460,7 +509,6 @@ export function CampañaForm({ isOpen, onClose, campaña }: CampañaFormProps) {
               />
             </div>
 
-            {/* Botones */}
             <div className="flex justify-end gap-2 pt-4 border-t">
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancelar
