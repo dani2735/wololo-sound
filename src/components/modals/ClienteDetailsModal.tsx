@@ -37,10 +37,7 @@ export function ClienteDetailsModal({ cliente, onClose, onEdit, onDelete }: Clie
             <div>
               <h3 className="font-semibold mb-3">Información del Cliente</h3>
               <div className="space-y-2">
-                <p><strong>Nombre:</strong> {cliente.nombre_cliente}</p>
-                <p><strong>Nombre Pagador:</strong> {cliente.nombre_pagador}</p>
-                <p><strong>NIF:</strong> <span className="font-mono">{cliente.nif}</span></p>
-                <p><strong>Dirección:</strong> {cliente.direccion || 'No especificada'}</p>
+                <p><strong>Nombre:</strong> {cliente.nombre}</p>
               </div>
             </div>
 

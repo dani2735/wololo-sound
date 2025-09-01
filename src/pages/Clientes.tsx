@@ -213,37 +213,16 @@ export default function Clientes() {
                       />
                     </TableHead>
                   )}
-                   <TableHead>
-                      <Button 
-                        variant="ghost" 
-                        className="h-auto p-0 font-medium hover:bg-transparent"
-                        onClick={() => handleSort("nombre_cliente")}
-                      >
-                        Cliente
-                        {getSortIcon("nombre_cliente")}
-                     </Button>
-                   </TableHead>
-                   <TableHead>
-                      <Button 
-                        variant="ghost" 
-                        className="h-auto p-0 font-medium hover:bg-transparent"
-                        onClick={() => handleSort("nombre_pagador")}
-                      >
-                        Nombre Pagador
-                        {getSortIcon("nombre_pagador")}
-                     </Button>
-                   </TableHead>
-                   <TableHead>
-                     <Button 
-                       variant="ghost" 
-                       className="h-auto p-0 font-medium hover:bg-transparent"
-                       onClick={() => handleSort("nif")}
-                     >
-                       NIF
-                       {getSortIcon("nif")}
-                     </Button>
-                   </TableHead>
-                   <TableHead>Dirección</TableHead>
+                     <TableHead>
+                       <Button 
+                         variant="ghost" 
+                         className="h-auto p-0 font-medium hover:bg-transparent"
+                         onClick={() => handleSort("nombre")}
+                       >
+                         Cliente
+                         {getSortIcon("nombre")}
+                      </Button>
+                    </TableHead>
                    <TableHead>
                      <Button 
                        variant="ghost" 
@@ -288,14 +267,7 @@ export default function Clientes() {
                         />
                       </TableCell>
                     )}
-                     <TableCell className="font-medium">{cliente.nombre_cliente}</TableCell>
-                     <TableCell>{cliente.nombre_pagador}</TableCell>
-                    <TableCell className="font-mono">{cliente.nif}</TableCell>
-                    <TableCell className="max-w-48">
-                      <div className="truncate" title={cliente.direccion}>
-                        {cliente.direccion}
-                      </div>
-                    </TableCell>
+                      <TableCell className="font-medium">{cliente.nombre}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <span className="font-semibold">{getCampaignCount(cliente.id)}</span>
