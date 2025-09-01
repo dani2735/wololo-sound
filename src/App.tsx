@@ -11,6 +11,8 @@ import Campanas from "./pages/Campanas";
 import Contabilidad from "./pages/Contabilidad";
 import Facturacion from "./pages/Facturacion";
 import Clientes from "./pages/Clientes";
+import Colaboradores from "./pages/Colaboradores";
+import Sociedades from "./pages/Sociedades";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -36,6 +38,8 @@ const App = () => (
                     <Route path="/contabilidad/cuenta-paypal" element={<Contabilidad />} />
                     <Route path="/facturacion" element={<Facturacion />} />
                     <Route path="/clientes" element={<Clientes />} />
+                    <Route path="/clientes/sociedades" element={<Sociedades />} />
+                    <Route path="/colaboradores" element={<Colaboradores />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Layout>

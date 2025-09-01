@@ -1,4 +1,4 @@
-import { BarChart3, FileText, Users, Calendar, Euro, Home } from "lucide-react";
+import { BarChart3, FileText, Users, Calendar, Euro, Home, UserCheck, Building2 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 
 import {
@@ -20,6 +20,7 @@ const menuItems = [
   { title: "Contabilidad", url: "/contabilidad", icon: BarChart3 },
   { title: "Facturación", url: "/facturacion", icon: FileText },
   { title: "Clientes", url: "/clientes", icon: Users },
+  { title: "Colaboradores", url: "/colaboradores", icon: UserCheck },
 ];
 
 export function AppSidebar() {
@@ -110,6 +111,42 @@ export function AppSidebar() {
                     >
                       <Euro className="h-4 w-4 flex-shrink-0" />
                       <span className="ml-2">Cuenta Paypal</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Submenu for Clientes */}
+        {currentPath.startsWith("/clientes") && !isCollapsed && (
+          <SidebarGroup className="mt-4">
+            <SidebarGroupLabel>Gestión</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="space-y-1">
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink 
+                      to="/clientes"
+                      end
+                      className={`${getNavCls({ isActive: currentPath === "/clientes" })} 
+                        rounded-lg p-2 text-sm transition-all duration-200`}
+                    >
+                      <Users className="h-4 w-4 flex-shrink-0" />
+                      <span className="ml-2">Clientes</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink 
+                      to="/clientes/sociedades"
+                      className={`${getNavCls({ isActive: currentPath === "/clientes/sociedades" })} 
+                        rounded-lg p-2 text-sm transition-all duration-200`}
+                    >
+                      <Building2 className="h-4 w-4 flex-shrink-0" />
+                      <span className="ml-2">Sociedades</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
