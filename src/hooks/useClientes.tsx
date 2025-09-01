@@ -18,7 +18,7 @@ export const useClientes = () => {
       const { data, error } = await supabase
         .from('clientes')
         .select('*')
-        .order('nombre', { ascending: true });
+        .order('nombre_cliente', { ascending: true });
 
       if (error) throw error;
       setClientes(data || []);
@@ -31,17 +31,11 @@ export const useClientes = () => {
   };
 
   // Create new cliente
-  const createCliente = async (clienteData: { nombre: string }) => {
+  const createCliente = async (clienteData: Omit<ClienteInsert, 'id' | 'created_at'>) => {
     try {
-      // Generate a UUID for the new cliente
-      const clienteWithId = {
-        id: crypto.randomUUID(),
-        ...clienteData
-      };
-
       const { data, error } = await supabase
         .from('clientes')
-        .insert(clienteWithId)
+        .insert([clienteData])
         .select()
         .single();
 

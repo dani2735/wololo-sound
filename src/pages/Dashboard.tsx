@@ -1,11 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { useCampanas } from "@/hooks/useCampanas";
-import { useFacturas } from "@/hooks/useFacturas";
-import { useContabilidad } from "@/hooks/useContabilidad";
+import { useAppStore } from "@/stores/useAppStore";
 import { Euro, TrendingUp, TrendingDown, Calendar, FileText } from "lucide-react";
 
 const meses = [
@@ -13,104 +11,27 @@ const meses = [
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
 ];
 
-export default function DashboardNew() {
-  const { campanas } = useCampanas();
-  const { facturas } = useFacturas();
-  const { movimientos, getCurrentBalances } = useContabilidad();
+export default function Dashboard() {
+  const { 
+    mesSeleccionado, 
+    añoSeleccionado, 
+    setMesSeleccionado, 
+    setAñoSeleccionado, 
+    getDashboardData,
+    campañas 
+  } = useAppStore();
   
-  const [mesSeleccionado, setMesSeleccionado] = useState<number>(0);
-  const [añoSeleccionado, setAñoSeleccionado] = useState<number>(0);
+  const dashboardData = getDashboardData();
   
-  // Get current balances
-  const balances = getCurrentBalances();
-  const haberTotal = balances.paypal + balances.sl;
-  
-  // Get available years and months from campaigns
-  const availableYears = useMemo(() => {
-    return [...new Set(campanas
-      .filter(c => c.fecha)
-      .map(c => new Date(c.fecha!).getFullYear())
-    )].sort((a, b) => b - a);
-  }, [campanas]);
-  
-  const availableMonths = useMemo(() => {
-    return [...new Set(
-      campanas
-        .filter(c => c.fecha && new Date(c.fecha).getFullYear() === añoSeleccionado)
-        .map(c => new Date(c.fecha!).getMonth() + 1)
-    )].sort((a, b) => a - b);
-  }, [campanas, añoSeleccionado]);
+  // Get available years and months
+  const availableYears = [...new Set(campañas.map(c => new Date(c.fechaCreacion).getFullYear()))].sort((a, b) => b - a);
+  const availableMonths = [...new Set(
+    campañas
+      .filter(c => new Date(c.fechaCreacion).getFullYear() === añoSeleccionado)
+      .map(c => new Date(c.fechaCreacion).getMonth() + 1)
+  )].sort((a, b) => a - b);
 
-  // Calculate dashboard data
-  const dashboardData = useMemo(() => {
-    // Filter data by selected period
-    const filterByPeriod = (items: any[], dateField: string) => {
-      if (añoSeleccionado === 0) return items; // All data
-      
-      return items.filter(item => {
-        if (!item[dateField]) return false;
-        const date = new Date(item[dateField]);
-        const itemYear = date.getFullYear();
-        const itemMonth = date.getMonth() + 1;
-        
-        if (mesSeleccionado === 0) {
-          // All months of selected year
-          return itemYear === añoSeleccionado;
-        } else {
-          // Specific month and year
-          return itemYear === añoSeleccionado && itemMonth === mesSeleccionado;
-        }
-      });
-    };
-
-    const filteredCampanas = filterByPeriod(campanas, 'fecha');
-    const filteredFacturas = filterByPeriod(facturas, 'fecha');
-    const filteredMovimientos = filterByPeriod(movimientos, 'fecha');
-    
-    // Calculate totals
-    const totalFacturadoPendiente = facturas
-      .filter(f => f.estado_cobro === "Sin cobrar")
-      .reduce((acc, f) => acc + (f.precio || 0) + (f.iva || 0), 0);
-      
-    const totalPendienteFacturar = campanas
-      .filter(c => c.estado_facturacion === "Sin facturar")
-      .reduce((acc, c) => acc + (c.precio || 0), 0);
-      
-    const totalFacturadoHistorico = facturas
-      .reduce((acc, f) => acc + (f.precio || 0) + (f.iva || 0), 0);
-      
-    const totalCobradoHistorico = facturas
-      .filter(f => f.estado_cobro === "Cobrado")
-      .reduce((acc, f) => acc + (f.precio || 0) + (f.iva || 0), 0);
-
-    // Monthly data
-    const mesSeleccionadoData = {
-      totalFacturado: filteredFacturas
-        .reduce((acc, f) => acc + (f.precio || 0) + (f.iva || 0), 0),
-      totalCobradoSL: filteredMovimientos
-        .filter(m => m.tipo === "Cobro" && (m.modalidad?.toLowerCase().includes("sl") || m.modalidad?.toLowerCase().includes("cuenta sl")))
-        .reduce((acc, m) => acc + (m.importe || 0), 0),
-      totalCobradoPaypal: filteredMovimientos
-        .filter(m => m.tipo === "Cobro" && m.modalidad?.toLowerCase().includes("paypal"))
-        .reduce((acc, m) => acc + (m.importe || 0), 0),
-      totalPagadoMes: filteredMovimientos
-        .filter(m => m.tipo === "Pago")
-        .reduce((acc, m) => acc + (m.importe || 0), 0),
-      numeroFacturas: filteredFacturas.length,
-      numeroAcciones: filteredCampanas.length,
-    };
-
-    return {
-      cuentaSL: balances.sl,
-      cuentaPaypal: balances.paypal,
-      totalFacturadoPendiente,
-      totalPendienteFacturar,
-      totalFacturadoHistorico,
-      totalCobradoHistorico,
-      mesSeleccionado: mesSeleccionadoData,
-    };
-  }, [campanas, facturas, movimientos, balances, mesSeleccionado, añoSeleccionado]);
-
+  const haberTotal = dashboardData.cuentaSL + dashboardData.cuentaPaypal;
   const totalCobradoMes = dashboardData.mesSeleccionado.totalCobradoSL + dashboardData.mesSeleccionado.totalCobradoPaypal;
 
   return (
@@ -226,8 +147,9 @@ export default function DashboardNew() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setMesSeleccionado(0);
-                    setAñoSeleccionado(0);
+                    // Set to show all data by selecting all available years and months
+                    setMesSeleccionado(0); // 0 means all months
+                    setAñoSeleccionado(0); // 0 means all years
                   }}
                   className={mesSeleccionado === 0 && añoSeleccionado === 0 ? "bg-gradient-primary shadow-elegant" : ""}
                 >
@@ -249,7 +171,7 @@ export default function DashboardNew() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setMesSeleccionado(0);
+                    setMesSeleccionado(0); // 0 means all months of the year
                     setAñoSeleccionado(new Date().getFullYear());
                   }}
                   className={mesSeleccionado === 0 && añoSeleccionado === new Date().getFullYear() ? "bg-gradient-primary shadow-elegant" : ""}
@@ -260,7 +182,7 @@ export default function DashboardNew() {
                 value={añoSeleccionado.toString()} 
                 onValueChange={(value) => {
                   setAñoSeleccionado(Number(value));
-                  setMesSeleccionado(0);
+                  setMesSeleccionado(0); // Seleccionar todos los meses del año
                 }}
               >
                 <SelectTrigger className="w-32">
@@ -279,6 +201,8 @@ export default function DashboardNew() {
                 {meses.map((mes, index) => {
                   const mesNum = index + 1;
                   const isAvailable = availableMonths.includes(mesNum);
+                  // Si mesSeleccionado es 0 (todos los meses), marcar todos los disponibles
+                  // Si mesSeleccionado es específico, marcar solo ese mes
                   const isSelected = mesSeleccionado === 0 ? isAvailable : mesSeleccionado === mesNum;
                   
                   return (

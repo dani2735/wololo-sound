@@ -4,20 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useContabilidad } from "@/hooks/useContabilidad";
-import { Tables } from "@/integrations/supabase/types";
+import { useAppStore } from "@/stores/useAppStore";
+import { MovimientoContable, TipoMovimiento } from "@/types";
 import { Plus, Edit, Trash2, TrendingUp, TrendingDown, CheckSquare, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import { MovimientoForm } from "@/components/forms/MovimientoForm";
+import { MovimientoDetailsModal } from "@/components/modals/MovimientoDetailsModal";
 
-type Movimiento = Tables<'contabilidad'>;
-
-export default function ContabilidadNew() {
+export default function Contabilidad() {
   const location = useLocation();
-  const { movimientos, loading, deleteMovimiento, getCurrentBalances } = useContabilidad();
-  const [selectedMovimiento, setSelectedMovimiento] = useState<Movimiento | null>(null);
+  const { movimientos, clientes, deleteMovimiento } = useAppStore();
+  const [selectedMovimiento, setSelectedMovimiento] = useState<MovimientoContable | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [editingMovimiento, setEditingMovimiento] = useState<Movimiento | null>(null);
-  const [formTipo, setFormTipo] = useState<"Cobro" | "Pago">("Cobro");
+  const [editingMovimiento, setEditingMovimiento] = useState<MovimientoContable | null>(null);
+  const [formTipo, setFormTipo] = useState<TipoMovimiento>("cobro");
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [sortField, setSortField] = useState<string>("");
@@ -30,38 +30,43 @@ export default function ContabilidadNew() {
   const isShowingPaypal = location.pathname === "/contabilidad/cuenta-paypal";
 
   const filteredMovimientos = movimientos.filter(movimiento => {
-    if (isShowingSL) return movimiento.modalidad?.toLowerCase().includes("sl") || movimiento.modalidad?.toLowerCase().includes("cuenta sl");
-    if (isShowingPaypal) return movimiento.modalidad?.toLowerCase().includes("paypal");
-    if (filtroEstado === "cobros") return movimiento.tipo === "Cobro";
-    if (filtroEstado === "pagos") return movimiento.tipo === "Pago";
+    if (isShowingSL) return movimiento.cuenta === "Cuenta SL";
+    if (isShowingPaypal) return movimiento.cuenta === "Paypal";
+    if (filtroEstado === "cobros") return movimiento.tipo === "cobro";
+    if (filtroEstado === "pagos") return movimiento.tipo === "pago";
     return true; // Show all for main contabilidad page
   });
 
-  const getTipoIcon = (tipo: string | null) => {
-    return tipo === "Cobro" ? (
+  const getClienteName = (clienteId: string) => {
+    const cliente = clientes.find(c => c.id === clienteId);
+    return cliente?.nombre || "Cliente no encontrado";
+  };
+
+  const getTipoIcon = (tipo: string) => {
+    return tipo === "cobro" ? (
       <TrendingUp className="h-4 w-4 text-success" />
     ) : (
       <TrendingDown className="h-4 w-4 text-destructive" />
     );
   };
 
-  const getTipoBadgeVariant = (tipo: string | null) => {
-    return tipo === "Cobro" ? "default" : "destructive";
+  const getTipoBadgeVariant = (tipo: string) => {
+    return tipo === "cobro" ? "default" : "destructive";
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (confirm("¿Estás seguro de que quieres borrar este movimiento?")) {
-      await deleteMovimiento(id);
+      deleteMovimiento(id);
     }
   };
 
-  const handleEdit = (movimiento: Movimiento) => {
+  const handleEdit = (movimiento: MovimientoContable) => {
     setEditingMovimiento(movimiento);
-    setFormTipo((movimiento.tipo as "Cobro" | "Pago") || "Cobro");
+    setFormTipo(movimiento.tipo);
     setShowForm(true);
   };
 
-  const handleNewMovimiento = (tipo: "Cobro" | "Pago") => {
+  const handleNewMovimiento = (tipo: TipoMovimiento) => {
     setEditingMovimiento(null);
     setFormTipo(tipo);
     setShowForm(true);
@@ -93,13 +98,11 @@ export default function ContabilidadNew() {
     }
   };
 
-  const handleDeleteSelected = async () => {
+  const handleDeleteSelected = () => {
     if (selectedItems.length === 0) return;
     
     if (confirm(`¿Estás seguro de que quieres borrar ${selectedItems.length} movimientos?`)) {
-      for (const id of selectedItems) {
-        await deleteMovimiento(id);
-      }
+      selectedItems.forEach(id => deleteMovimiento(id));
       setSelectedItems([]);
       setSelectionMode(false);
     }
@@ -122,8 +125,13 @@ export default function ContabilidadNew() {
   const sortedMovimientos = filteredMovimientos.sort((a, b) => {
     if (!sortField) return 0;
     
-    let aValue: any = a[sortField as keyof Movimiento];
-    let bValue: any = b[sortField as keyof Movimiento];
+    let aValue: any = a[sortField as keyof MovimientoContable];
+    let bValue: any = b[sortField as keyof MovimientoContable];
+    
+    if (sortField === "clienteId") {
+      aValue = getClienteName(a.clienteId);
+      bValue = getClienteName(b.clienteId);
+    }
     
     if (typeof aValue === "string") {
       aValue = aValue.toLowerCase();
@@ -137,37 +145,26 @@ export default function ContabilidadNew() {
 
   // Calculate totals (always from all movements, not filtered)
   const allMovimientos = movimientos.filter(movimiento => {
-    if (isShowingSL) return movimiento.modalidad?.toLowerCase().includes("sl") || movimiento.modalidad?.toLowerCase().includes("cuenta sl");
-    if (isShowingPaypal) return movimiento.modalidad?.toLowerCase().includes("paypal");
+    if (isShowingSL) return movimiento.cuenta === "Cuenta SL";
+    if (isShowingPaypal) return movimiento.cuenta === "Paypal";
     return true; // Show all for main contabilidad page
   });
   
   const totalCobros = allMovimientos
-    .filter(m => m.tipo === "Cobro")
-    .reduce((acc, m) => acc + (m.importe || 0), 0);
+    .filter(m => m.tipo === "cobro")
+    .reduce((acc, m) => acc + m.precio, 0);
     
   const totalPagos = allMovimientos
-    .filter(m => m.tipo === "Pago")
-    .reduce((acc, m) => acc + (m.importe || 0), 0);
+    .filter(m => m.tipo === "pago")
+    .reduce((acc, m) => acc + m.precio, 0);
     
   const balance = totalCobros - totalPagos;
-  const balances = getCurrentBalances();
 
   const getPageTitle = () => {
     if (isShowingSL) return "Cuenta SL";
     if (isShowingPaypal) return "Cuenta Paypal";
     return "Contabilidad General";
   };
-
-  if (loading) {
-    return (
-      <div className="space-y-6 animate-fade-in">
-        <div className="text-center py-8">
-          <p className="text-lg text-muted-foreground">Cargando movimientos...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -203,14 +200,14 @@ export default function ContabilidadNew() {
           <Button 
             variant="outline" 
             className="shadow-card"
-            onClick={() => handleNewMovimiento("Pago")}
+            onClick={() => handleNewMovimiento("pago")}
           >
             <Plus className="mr-2 h-4 w-4" />
             Nuevo Pago
           </Button>
           <Button 
             className="bg-gradient-primary shadow-elegant hover:shadow-hover"
-            onClick={() => handleNewMovimiento("Cobro")}
+            onClick={() => handleNewMovimiento("cobro")}
           >
             <Plus className="mr-2 h-4 w-4" />
             Nuevo Cobro
@@ -225,7 +222,7 @@ export default function ContabilidadNew() {
           onClick={() => setFiltroEstado("")}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Balance Total</CardTitle>
+            <CardTitle className="text-sm font-medium">Balance</CardTitle>
             {balance >= 0 ? (
               <TrendingUp className="h-4 w-4" />
             ) : (
@@ -238,10 +235,6 @@ export default function ContabilidadNew() {
                 style: 'currency', 
                 currency: 'EUR' 
               })}
-            </div>
-            <div className="text-sm opacity-80 mt-1">
-              SL: {balances.sl.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })} | 
-              PayPal: {balances.paypal.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
             </div>
           </CardContent>
         </Card>
@@ -335,10 +328,20 @@ export default function ContabilidadNew() {
                      <Button 
                        variant="ghost" 
                        className="h-auto p-0 font-medium hover:bg-transparent"
-                       onClick={() => handleSort("importe")}
+                       onClick={() => handleSort("clienteId")}
                      >
-                       Importe
-                       {getSortIcon("importe")}
+                       Cliente
+                       {getSortIcon("clienteId")}
+                     </Button>
+                   </TableHead>
+                   <TableHead>
+                     <Button 
+                       variant="ghost" 
+                       className="h-auto p-0 font-medium hover:bg-transparent"
+                       onClick={() => handleSort("precio")}
+                     >
+                       Precio
+                       {getSortIcon("precio")}
                      </Button>
                    </TableHead>
                    {isShowingAll && (
@@ -346,10 +349,10 @@ export default function ContabilidadNew() {
                       <Button 
                         variant="ghost" 
                         className="h-auto p-0 font-medium hover:bg-transparent"
-                        onClick={() => handleSort("modalidad")}
+                        onClick={() => handleSort("cuenta")}
                       >
-                        Modalidad
-                        {getSortIcon("modalidad")}
+                        Cuenta
+                        {getSortIcon("cuenta")}
                       </Button>
                     </TableHead>
                   )}
@@ -363,7 +366,7 @@ export default function ContabilidadNew() {
                       {getSortIcon("detalles")}
                     </Button>
                   </TableHead>
-                   <TableHead>Saldos</TableHead>
+                   <TableHead>Tipo de Cobro</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -389,35 +392,42 @@ export default function ContabilidadNew() {
                       </TableCell>
                     )}
                     <TableCell>
-                      {movimiento.fecha ? new Date(movimiento.fecha).toLocaleDateString('es-ES') : 'Sin fecha'}
+                      {new Date(movimiento.fecha).toLocaleDateString('es-ES')}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {getTipoIcon(movimiento.tipo)}
                         <Badge variant={getTipoBadgeVariant(movimiento.tipo)}>
-                          {movimiento.tipo || 'Sin tipo'}
+                          {movimiento.tipo.charAt(0).toUpperCase() + movimiento.tipo.slice(1)}
                         </Badge>
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium">{movimiento.pagador || 'Sin pagador'}</TableCell>
-                    <TableCell className={`font-bold ${movimiento.tipo === 'Cobro' ? 'text-success' : 'text-destructive'}`}>
-                      {movimiento.tipo === 'Cobro' ? '+' : '-'}
-                      {(movimiento.importe || 0).toLocaleString('es-ES', { 
+                    <TableCell className="font-medium">{movimiento.pagador}</TableCell>
+                    <TableCell>{getClienteName(movimiento.clienteId)}</TableCell>
+                    <TableCell className={`font-bold ${movimiento.tipo === 'cobro' ? 'text-success' : 'text-destructive'}`}>
+                      {movimiento.tipo === 'cobro' ? '+' : '-'}
+                      {movimiento.precio.toLocaleString('es-ES', { 
                         style: 'currency', 
                         currency: 'EUR' 
                       })}
                     </TableCell>
                      {isShowingAll && (
                        <TableCell>
-                         <Badge variant="outline">{movimiento.modalidad || 'Sin modalidad'}</Badge>
+                         <Badge variant="outline">{movimiento.cuenta}</Badge>
                        </TableCell>
                      )}
                      <TableCell className="max-w-xs truncate">
                        {movimiento.detalles || '-'}
                      </TableCell>
-                      <TableCell className="text-xs">
-                        <div>SL: €{(movimiento.saldo_sl || 0).toLocaleString()}</div>
-                        <div>PP: €{(movimiento.saldo_paypal || 0).toLocaleString()}</div>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {(() => {
+                            // Get tipo cobro from related campaña if available
+                            const { campañas } = useAppStore.getState();
+                            const relacionCampaña = campañas.find(c => c.referenciaFactura === movimiento.referenciaFactura);
+                            return relacionCampaña?.tipoCobro || 'No especificado';
+                          })()}
+                        </Badge>
                       </TableCell>
                   </TableRow>
                 ))}
@@ -433,28 +443,27 @@ export default function ContabilidadNew() {
         </CardContent>
       </Card>
 
-      {/* TODO: Implement MovimientoDetailsModal and MovimientoForm for new schema */}
       {selectedMovimiento && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-card rounded-lg shadow-elegant max-w-md w-full p-6">
-            <h3 className="font-semibold mb-4">Detalles del Movimiento</h3>
-            <p className="mb-2">Tipo: {selectedMovimiento.tipo}</p>
-            <p className="mb-2">Importe: €{selectedMovimiento.importe}</p>
-            <p className="mb-4">Fecha: {selectedMovimiento.fecha}</p>
-            <Button onClick={() => setSelectedMovimiento(null)}>Cerrar</Button>
-          </div>
-        </div>
+        <MovimientoDetailsModal
+          movimiento={selectedMovimiento}
+          onClose={() => setSelectedMovimiento(null)}
+          onEdit={(movimiento) => {
+            setSelectedMovimiento(null);
+            handleEdit(movimiento);
+          }}
+          onDelete={(id) => {
+            handleDelete(id);
+            setSelectedMovimiento(null);
+          }}
+        />
       )}
 
-      {showForm && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-card rounded-lg shadow-elegant max-w-md w-full p-6">
-            <h3 className="font-semibold mb-4">Formulario de Movimiento</h3>
-            <p className="mb-4">Funcionalidad pendiente de implementar</p>
-            <Button onClick={handleCloseForm}>Cerrar</Button>
-          </div>
-        </div>
-      )}
+      <MovimientoForm 
+        isOpen={showForm}
+        onClose={handleCloseForm}
+        tipo={formTipo}
+        movimiento={editingMovimiento || undefined}
+      />
     </div>
   );
 }

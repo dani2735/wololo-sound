@@ -3,23 +3,29 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SortableTable } from "@/components/ui/sortable-table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useCampanas } from "@/hooks/useCampanas";
-import { useClientes } from "@/hooks/useClientes";
-import { Tables } from "@/integrations/supabase/types";
-import { Plus, Edit, Trash2, CheckSquare, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { useAppStore } from "@/stores/useAppStore";
+import { CampañaPrensa } from "@/types";
+import { Plus, Edit, Trash2, Receipt, CheckSquare, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { CampañaForm } from "@/components/forms/CampañaForm";
+import { CampañaDetailsModal } from "@/components/modals/CampañaDetailsModal";
+import { FacturaForm } from "@/components/forms/FacturaForm";
 
-type Campana = Tables<'campanas'>;
-type Cliente = Tables<'clientes'>;
-
-export default function CampanasNew() {
-  const { campanas, loading, deleteCampana } = useCampanas();
-  const { clientes } = useClientes();
-  const [selectedCampana, setSelectedCampana] = useState<Campana | null>(null);
+export default function Campanas() {
+  const { campañas, clientes, deleteCampaña } = useAppStore();
+  const [selectedCampaña, setSelectedCampaña] = useState<CampañaPrensa | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [editingCampaña, setEditingCampaña] = useState<CampañaPrensa | null>(null);
+  const [showFacturaForm, setShowFacturaForm] = useState(false);
+  const [facturandoCampaña, setFacturandoCampaña] = useState<CampañaPrensa | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [sortField, setSortField] = useState<string>("");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [columnOrder, setColumnOrder] = useState<string[]>([
+    'fecha', 'cliente', 'detalles', 'estado', 'tipoCobro', 'precio', 'estadoFacturacion'
+  ]);
   const [filtroEstado, setFiltroEstado] = useState<string>("");
 
   const getClienteName = (clienteId: string) => {
@@ -27,7 +33,7 @@ export default function CampanasNew() {
     return cliente?.nombre || "Cliente no encontrado";
   };
 
-  const getEstadoBadgeVariant = (estado: string | null) => {
+  const getEstadoBadgeVariant = (estado: string) => {
     switch (estado) {
       case "TERMINADO":
         return "default";
@@ -40,17 +46,54 @@ export default function CampanasNew() {
     }
   };
 
-  const formatPrecio = (precio: number | null) => {
-    return (precio || 0).toLocaleString('es-ES', { 
-      style: 'currency', 
-      currency: 'EUR' 
-    });
+  const getCobroBadgeVariant = (estado: string) => {
+    return estado === "Cobrado" ? "default" : "destructive";
   };
 
-  const handleDelete = async (id: string) => {
+  const formatAcciones = (acciones: any) => {
+    const accionesArray = [];
+    
+    if (acciones.instagramPost > 0) accionesArray.push(`IG Post: ${acciones.instagramPost}`);
+    if (acciones.instagramFlyer > 0) accionesArray.push(`IG Flyer: ${acciones.instagramFlyer}`);
+    if (acciones.instagramVideo > 0) accionesArray.push(`IG Video: ${acciones.instagramVideo}`);
+    if (acciones.instagramVideoAna > 0) accionesArray.push(`IG Video Ana: ${acciones.instagramVideoAna}`);
+    if (acciones.instagramAgendaMadrid > 0) accionesArray.push(`IG Agenda Madrid: ${acciones.instagramAgendaMadrid}`);
+    if (acciones.instagramAgendaIbiza > 0) accionesArray.push(`IG Agenda Ibiza: ${acciones.instagramAgendaIbiza}`);
+    if (acciones.webArticulo > 0) accionesArray.push(`Web Artículo: ${acciones.webArticulo}`);
+    if (acciones.webEntrevista > 0) accionesArray.push(`Web Entrevista: ${acciones.webEntrevista}`);
+    if (acciones.webAgenda > 0) accionesArray.push(`Web Agenda: ${acciones.webAgenda}`);
+    if (acciones.podcastMencion > 0) accionesArray.push(`Podcast Mención: ${acciones.podcastMencion}`);
+    if (acciones.podcastEntrevista > 0) accionesArray.push(`Podcast Entrevista: ${acciones.podcastEntrevista}`);
+    if (acciones.youtubeEntrevista > 0) accionesArray.push(`YouTube Entrevista: ${acciones.youtubeEntrevista}`);
+    if (acciones.otrasAcciones) accionesArray.push(`Otras: ${acciones.otrasAcciones}`);
+    
+    return accionesArray.length > 0 ? accionesArray.join(", ") : "Sin acciones";
+  };
+
+  const handleDelete = (id: string) => {
     if (confirm("¿Estás seguro de que quieres borrar esta campaña?")) {
-      await deleteCampana(id);
+      deleteCampaña(id);
     }
+  };
+
+  const handleEdit = (campaña: CampañaPrensa) => {
+    setEditingCampaña(campaña);
+    setShowForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditingCampaña(null);
+  };
+
+  const handleFacturar = (campaña: CampañaPrensa) => {
+    setFacturandoCampaña(campaña);
+    setShowFacturaForm(true);
+  };
+
+  const handleCloseFacturaForm = () => {
+    setShowFacturaForm(false);
+    setFacturandoCampaña(null);
   };
 
   const toggleSelectionMode = () => {
@@ -67,20 +110,18 @@ export default function CampanasNew() {
   };
 
   const handleSelectAll = () => {
-    if (selectedItems.length === campanas.length) {
+    if (selectedItems.length === campañas.length) {
       setSelectedItems([]);
     } else {
-      setSelectedItems(campanas.map(c => c.id));
+      setSelectedItems(campañas.map(c => c.id));
     }
   };
 
-  const handleDeleteSelected = async () => {
+  const handleDeleteSelected = () => {
     if (selectedItems.length === 0) return;
     
     if (confirm(`¿Estás seguro de que quieres borrar ${selectedItems.length} campañas?`)) {
-      for (const id of selectedItems) {
-        await deleteCampana(id);
-      }
+      selectedItems.forEach(id => deleteCampaña(id));
       setSelectedItems([]);
       setSelectionMode(false);
     }
@@ -100,23 +141,23 @@ export default function CampanasNew() {
     return sortDirection === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
   };
 
-  const filteredAndSortedCampanas = campanas
-    .filter(campana => {
-      if (filtroEstado === "EN_CURSO") return campana.estado_campana === "EN CURSO";
-      if (filtroEstado === "TERMINADO") return campana.estado_campana === "TERMINADO";
-      if (filtroEstado === "PENDIENTE_FACTURAR") return campana.estado_facturacion === "Sin facturar";
-      if (filtroEstado === "PENDIENTE_COBRAR") return campana.estado_cobro === "Sin cobrar";
+  const filteredAndSortedCampañas = campañas
+    .filter(campaña => {
+      if (filtroEstado === "EN CURSO") return campaña.estado === "EN CURSO";
+      if (filtroEstado === "TERMINADO") return campaña.estado === "TERMINADO";
+      if (filtroEstado === "PENDIENTE_FACTURAR") return campaña.tipoCobro.includes("Factura") && campaña.estadoFacturacion === "Sin facturar";
+      if (filtroEstado === "PENDIENTE_COBRAR") return campaña.estadoCobro === "Sin cobrar";
       return true;
     })
     .sort((a, b) => {
       if (!sortField) return 0;
       
-      let aValue: any = a[sortField as keyof Campana];
-      let bValue: any = b[sortField as keyof Campana];
+      let aValue: any = a[sortField as keyof CampañaPrensa];
+      let bValue: any = b[sortField as keyof CampañaPrensa];
       
-      if (sortField === "id_cliente") {
-        aValue = getClienteName(a.id_cliente || "");
-        bValue = getClienteName(b.id_cliente || "");
+      if (sortField === "clienteId") {
+        aValue = getClienteName(a.clienteId);
+        bValue = getClienteName(b.clienteId);
       }
       
       if (typeof aValue === "string") {
@@ -128,16 +169,6 @@ export default function CampanasNew() {
       if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
       return 0;
     });
-
-  if (loading) {
-    return (
-      <div className="space-y-6 animate-fade-in">
-        <div className="text-center py-8">
-          <p className="text-lg text-muted-foreground">Cargando campañas...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -172,6 +203,7 @@ export default function CampanasNew() {
           
           <Button 
             className="bg-gradient-primary shadow-elegant hover:shadow-hover"
+            onClick={() => setShowForm(true)}
           >
             <Plus className="mr-2 h-4 w-4" />
             Nueva Campaña
@@ -189,20 +221,20 @@ export default function CampanasNew() {
             <CardTitle className="text-sm text-muted-foreground">Total Campañas</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{campanas.length}</div>
+            <div className="text-2xl font-bold">{campañas.length}</div>
           </CardContent>
         </Card>
 
         <Card 
-          className={`bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover ${filtroEstado === "EN_CURSO" ? "ring-2 ring-primary" : ""}`}
-          onClick={() => setFiltroEstado("EN_CURSO")}
+          className={`bg-gradient-card shadow-card border-0 cursor-pointer transition-all hover:shadow-hover ${filtroEstado === "EN CURSO" ? "ring-2 ring-primary" : ""}`}
+          onClick={() => setFiltroEstado("EN CURSO")}
         >
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-muted-foreground">En Curso</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-warning">
-              {campanas.filter(c => c.estado_campana === "EN CURSO").length}
+              {campañas.filter(c => c.estado === "EN CURSO").length}
             </div>
           </CardContent>
         </Card>
@@ -216,7 +248,7 @@ export default function CampanasNew() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-success">
-              {campanas.filter(c => c.estado_campana === "TERMINADO").length}
+              {campañas.filter(c => c.estado === "TERMINADO").length}
             </div>
           </CardContent>
         </Card>
@@ -230,7 +262,7 @@ export default function CampanasNew() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
-              {campanas.filter(c => c.estado_facturacion === "Sin facturar").length}
+              {campañas.filter(c => c.tipoCobro.includes("Factura") && c.estadoFacturacion === "Sin facturar").length}
             </div>
           </CardContent>
         </Card>
@@ -244,7 +276,7 @@ export default function CampanasNew() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
-              {campanas.filter(c => c.estado_cobro === "Sin cobrar").length}
+              {campañas.filter(c => c.estadoCobro === "Sin cobrar").length}
             </div>
           </CardContent>
         </Card>
@@ -263,7 +295,7 @@ export default function CampanasNew() {
                   {selectionMode && (
                     <TableHead className="w-12">
                       <Checkbox
-                        checked={selectedItems.length === campanas.length && campanas.length > 0}
+                        checked={selectedItems.length === campañas.length && campañas.length > 0}
                         onCheckedChange={handleSelectAll}
                       />
                     </TableHead>
@@ -272,20 +304,20 @@ export default function CampanasNew() {
                      <Button 
                        variant="ghost" 
                        className="h-auto p-0 font-medium hover:bg-transparent"
-                       onClick={() => handleSort("fecha")}
+                       onClick={() => handleSort("fechaCreacion")}
                      >
-                       Fecha
-                       {getSortIcon("fecha")}
+                       Fecha Creación
+                       {getSortIcon("fechaCreacion")}
                      </Button>
                    </TableHead>
                    <TableHead>
                      <Button 
                        variant="ghost" 
                        className="h-auto p-0 font-medium hover:bg-transparent"
-                       onClick={() => handleSort("id_cliente")}
+                       onClick={() => handleSort("clienteId")}
                      >
                        Cliente
-                       {getSortIcon("id_cliente")}
+                       {getSortIcon("clienteId")}
                      </Button>
                    </TableHead>
                    <TableHead>Acciones</TableHead>
@@ -303,10 +335,10 @@ export default function CampanasNew() {
                      <Button 
                        variant="ghost" 
                        className="h-auto p-0 font-medium hover:bg-transparent"
-                       onClick={() => handleSort("estado_campana")}
+                       onClick={() => handleSort("estado")}
                      >
                        Estado
-                       {getSortIcon("estado_campana")}
+                       {getSortIcon("estado")}
                      </Button>
                    </TableHead>
                    <TableHead>Tipo Cobro</TableHead>
@@ -314,74 +346,77 @@ export default function CampanasNew() {
                      <Button 
                        variant="ghost" 
                        className="h-auto p-0 font-medium hover:bg-transparent"
-                       onClick={() => handleSort("estado_facturacion")}
+                       onClick={() => handleSort("estadoFacturacion")}
                      >
                        Estado Facturación
-                       {getSortIcon("estado_facturacion")}
+                       {getSortIcon("estadoFacturacion")}
                      </Button>
                    </TableHead>
                    <TableHead>
                      <Button 
                        variant="ghost" 
                        className="h-auto p-0 font-medium hover:bg-transparent"
-                       onClick={() => handleSort("estado_cobro")}
+                       onClick={() => handleSort("estadoCobro")}
                      >
                        Estado Cobro
-                       {getSortIcon("estado_cobro")}
+                       {getSortIcon("estadoCobro")}
                      </Button>
                    </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredAndSortedCampanas.map((campana) => (
+                {filteredAndSortedCampañas.map((campaña) => (
                   <TableRow 
-                    key={campana.id} 
+                    key={campaña.id} 
                     className="hover:bg-accent/50 cursor-pointer"
                     onClick={(e) => {
                       if (selectionMode) {
                         e.stopPropagation();
-                        handleSelectItem(campana.id);
+                        handleSelectItem(campaña.id);
                       } else {
-                        setSelectedCampana(campana);
+                        setSelectedCampaña(campaña);
                       }
                     }}
                   >
                     {selectionMode && (
                       <TableCell>
                         <Checkbox
-                          checked={selectedItems.includes(campana.id)}
-                          onCheckedChange={() => handleSelectItem(campana.id)}
+                          checked={selectedItems.includes(campaña.id)}
+                          onCheckedChange={() => handleSelectItem(campaña.id)}
                         />
                       </TableCell>
                     )}
                     <TableCell>
-                      {campana.fecha ? new Date(campana.fecha).toLocaleDateString('es-ES') : 'Sin fecha'}
+                      {new Date(campaña.fechaCreacion).toLocaleDateString('es-ES')}
                     </TableCell>
                     <TableCell className="font-medium">
-                      {getClienteName(campana.id_cliente || "")}
+                      {getClienteName(campaña.clienteId)}
                     </TableCell>
                     <TableCell className="max-w-48">
-                      <div className="truncate" title={campana.acciones || ""}>
-                        {campana.acciones || "Sin acciones"}
+                      <div className="truncate" title={formatAcciones(campaña.acciones)}>
+                        {formatAcciones(campaña.acciones)}
                       </div>
                     </TableCell>
                     <TableCell>
-                      {formatPrecio(campana.precio)}
+                      {campaña.precio.toLocaleString('es-ES', { 
+                        style: 'currency', 
+                        currency: 'EUR' 
+                      })}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getEstadoBadgeVariant(campana.estado_campana)}>
-                        {campana.estado_campana || "Sin estado"}
+                      <Badge variant={getEstadoBadgeVariant(campaña.estado)}>
+                        {campaña.estado}
                       </Badge>
                     </TableCell>
-                    <TableCell>{campana.tipo_cobro || "Sin definir"}</TableCell>
+                    <TableCell>{campaña.tipoCobro}</TableCell>
                     <TableCell>
-                      <Badge variant={campana.estado_facturacion === "Facturado" ? "default" : "destructive"}>
-                        {campana.estado_facturacion || "Sin definir"}
+                      <Badge variant={campaña.estadoFacturacion === "Facturado" ? "default" : "destructive"}>
+                        {campaña.estadoFacturacion}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={campana.estado_cobro === "Cobrado" ? "default" : "destructive"}>
-                        {campana.estado_cobro || "Sin definir"}
+                      <Badge variant={getCobroBadgeVariant(campaña.estadoCobro)}>
+                        {campaña.estadoCobro}
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -389,7 +424,7 @@ export default function CampanasNew() {
               </TableBody>
             </Table>
             
-            {filteredAndSortedCampanas.length === 0 && (
+            {filteredAndSortedCampañas.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 {filtroEstado === "" 
                   ? "No hay campañas registradas. ¡Crea tu primera campaña!" 
@@ -400,6 +435,34 @@ export default function CampanasNew() {
           </div>
         </CardContent>
       </Card>
+
+      {selectedCampaña && (
+        <CampañaDetailsModal
+          campaña={campañas.find(c => c.id === selectedCampaña.id) || selectedCampaña}
+          onClose={() => setSelectedCampaña(null)}
+          onEdit={(campaña) => {
+            setSelectedCampaña(null);
+            handleEdit(campaña);
+          }}
+          onDelete={(id) => {
+            handleDelete(id);
+            setSelectedCampaña(null);
+          }}
+          onFacturar={handleFacturar}
+        />
+      )}
+
+      <CampañaForm 
+        isOpen={showForm}
+        onClose={handleCloseForm}
+        campaña={editingCampaña || undefined}
+      />
+
+      <FacturaForm 
+        isOpen={showFacturaForm}
+        onClose={handleCloseFacturaForm}
+        campaña={facturandoCampaña || undefined}
+      />
     </div>
   );
 }
