@@ -5,14 +5,15 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useAppStore } from "@/stores/useAppStore";
-import { Factura } from "@/types";
+import { useFacturas, Factura } from "@/hooks/useFacturas";
+import { useClientes } from "@/hooks/useClientes";
 import { Plus, Edit, Trash2, FileText, Euro, CheckSquare, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { FacturaForm } from "@/components/forms/FacturaForm";
 import { FacturaDetailsModal } from "@/components/modals/FacturaDetailsModal";
 
 export default function Facturacion() {
-  const { facturas, clientes, deleteFactura } = useAppStore();
+  const { facturas, loading: facturasLoading, deleteFactura } = useFacturas();
+  const { clientes, loading: clientesLoading } = useClientes();
   const [selectedFactura, setSelectedFactura] = useState<Factura | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<string>("todas");
   const [showForm, setShowForm] = useState(false);
@@ -22,11 +23,9 @@ export default function Facturacion() {
   const [sortField, setSortField] = useState<string>("");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  const [baseFacturas] = useState(facturas); // Keep original list for stats
-  
   const filteredFacturas = facturas.filter(factura => {
-    if (filtroEstado === "cobradas") return factura.estadoCobro === "Cobrado";
-    if (filtroEstado === "pendientes") return factura.estadoCobro === "Sin cobrar";
+    if (filtroEstado === "cobradas") return factura.estado_cobro === "Cobrado";
+    if (filtroEstado === "pendientes") return factura.estado_cobro === "Sin cobrar";
     return true;
   });
 
@@ -106,9 +105,9 @@ export default function Facturacion() {
     let aValue: any = a[sortField as keyof Factura];
     let bValue: any = b[sortField as keyof Factura];
     
-    if (sortField === "clienteId") {
-      aValue = getClienteName(a.clienteId);
-      bValue = getClienteName(b.clienteId);
+    if (sortField === "cliente") {
+      aValue = getClienteName(a.cliente);
+      bValue = getClienteName(b.cliente);
     } else if (sortField === "total") {
       aValue = a.precio + a.iva;
       bValue = b.precio + b.iva;
@@ -124,10 +123,14 @@ export default function Facturacion() {
     return 0;
   });
 
-  // Cálculos para las tarjetas de resumen (always use all invoices)
-  const totalFacturado = baseFacturas.reduce((acc, factura) => acc + factura.precio + factura.iva, 0);
-  const totalCobrado = baseFacturas.filter(f => f.estadoCobro === "Cobrado").reduce((acc, factura) => acc + factura.precio + factura.iva, 0);
-  const pendienteCobro = baseFacturas.filter(f => f.estadoCobro === "Sin cobrar").reduce((acc, factura) => acc + factura.precio + factura.iva, 0);
+  // Cálculos para las tarjetas de resumen
+  const totalFacturado = facturas.reduce((acc, factura) => acc + factura.precio + factura.iva, 0);
+  const totalCobrado = facturas.filter(f => f.estado_cobro === "Cobrado").reduce((acc, factura) => acc + factura.precio + factura.iva, 0);
+  const pendienteCobro = facturas.filter(f => f.estado_cobro === "Sin cobrar").reduce((acc, factura) => acc + factura.precio + factura.iva, 0);
+
+  if (facturasLoading || clientesLoading) {
+    return <div>Cargando facturas...</div>;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -205,7 +208,7 @@ export default function Facturacion() {
               })}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {filteredFacturas.length} facturas
+              {facturas.length} facturas
             </p>
           </CardContent>
         </Card>
@@ -226,7 +229,7 @@ export default function Facturacion() {
               })}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {filteredFacturas.filter(f => f.estadoCobro === "Cobrado").length} facturas cobradas
+              {facturas.filter(f => f.estado_cobro === "Cobrado").length} facturas cobradas
             </p>
           </CardContent>
         </Card>
@@ -247,7 +250,7 @@ export default function Facturacion() {
               })}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {filteredFacturas.filter(f => f.estadoCobro === "Sin cobrar").length} facturas pendientes
+              {facturas.filter(f => f.estado_cobro === "Sin cobrar").length} facturas pendientes
             </p>
           </CardContent>
         </Card>
@@ -295,20 +298,20 @@ export default function Facturacion() {
                      <Button 
                        variant="ghost" 
                        className="h-auto p-0 font-medium hover:bg-transparent"
-                       onClick={() => handleSort("nombrePagador")}
+                       onClick={() => handleSort("pagador")}
                      >
                        Pagador
-                       {getSortIcon("nombrePagador")}
+                       {getSortIcon("pagador")}
                      </Button>
                    </TableHead>
                    <TableHead>
                      <Button 
                        variant="ghost" 
                        className="h-auto p-0 font-medium hover:bg-transparent"
-                       onClick={() => handleSort("clienteId")}
+                       onClick={() => handleSort("cliente")}
                      >
                        Cliente
-                       {getSortIcon("clienteId")}
+                       {getSortIcon("cliente")}
                      </Button>
                    </TableHead>
                    
@@ -346,12 +349,13 @@ export default function Facturacion() {
                      <Button 
                        variant="ghost" 
                        className="h-auto p-0 font-medium hover:bg-transparent"
-                       onClick={() => handleSort("estadoCobro")}
+                       onClick={() => handleSort("estado_cobro")}
                      >
                        Estado Cobro
-                       {getSortIcon("estadoCobro")}
+                       {getSortIcon("estado_cobro")}
                      </Button>
                    </TableHead>
+                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -380,10 +384,10 @@ export default function Facturacion() {
                       {new Date(factura.fecha).toLocaleDateString('es-ES')}
                     </TableCell>
                     <TableCell className="font-mono font-medium">
-                      {factura.referencia}
+                      {factura.referencia || factura.factura}
                     </TableCell>
-                    <TableCell>{factura.nombrePagador}</TableCell>
-                    <TableCell>{getClienteName(factura.clienteId)}</TableCell>
+                    <TableCell>{factura.pagador}</TableCell>
+                    <TableCell>{getClienteName(factura.cliente)}</TableCell>
                     <TableCell>
                       {factura.precio.toLocaleString('es-ES', { 
                         style: 'currency', 
@@ -403,9 +407,33 @@ export default function Facturacion() {
                       })}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getEstadoBadgeVariant(factura.estadoCobro)}>
-                        {factura.estadoCobro}
+                      <Badge variant={getEstadoBadgeVariant(factura.estado_cobro || "Sin cobrar")}>
+                        {factura.estado_cobro || "Sin cobrar"}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex gap-1 justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(factura);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(factura.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -424,26 +452,9 @@ export default function Facturacion() {
         </CardContent>
       </Card>
 
-      {selectedFactura && (
-        <FacturaDetailsModal
-          factura={selectedFactura}
-          onClose={() => setSelectedFactura(null)}
-          onEdit={(factura) => {
-            setSelectedFactura(null);
-            handleEdit(factura);
-          }}
-          onDelete={(id) => {
-            handleDelete(id);
-            setSelectedFactura(null);
-          }}
-        />
-      )}
-
-      <FacturaForm 
-        isOpen={showForm}
-        onClose={handleCloseForm}
-        factura={editingFactura || undefined}
-      />
+      {/* Modales deshabilitados temporalmente */}
+      {/* {selectedFactura && <FacturaDetailsModal.../>} */}
+      {/* <FacturaForm .../> */}
     </div>
   );
 }
