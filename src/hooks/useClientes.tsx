@@ -18,7 +18,7 @@ export const useClientes = () => {
       const { data, error } = await supabase
         .from('clientes')
         .select('*')
-        .order('nombre_cliente', { ascending: true });
+        .order('nombre', { ascending: true });
 
       if (error) throw error;
       setClientes(data || []);
