@@ -7,237 +7,375 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "12.2.12 (cd3cf9e)"
   }
   public: {
     Tables: {
-      campañas: {
+      campanas: {
         Row: {
-          acciones: Json | null
-          cliente_id: string
-          cobro_ana: number
+          acciones: string | null
+          cobro_ana: number | null
+          cobro_wololo_sound: number | null
           comentarios: string | null
-          created_at: string
           detalles: string | null
-          estado: Database["public"]["Enums"]["estado_campaña"]
-          estado_facturacion: string
-          factura_id: string | null
-          fecha_creacion: string
+          estado_campana: string | null
+          estado_cobro: string | null
+          estado_facturacion: string | null
+          estado_pago_ana: string | null
+          fecha: string
           id: string
-          precio: number
-          tipo_cobro: Database["public"]["Enums"]["tipo_cobro_campaña"]
+          id_cliente: string
+          importe_cobrado: number | null
+          importe_facturado: number | null
+          importe_pendiente_cobrar: number | null
+          importe_pendiente_facturar: number | null
+          precio: number | null
+          tipo_cobro: string | null
         }
         Insert: {
-          acciones?: Json | null
-          cliente_id: string
-          cobro_ana?: number
+          acciones?: string | null
+          cobro_ana?: number | null
+          cobro_wololo_sound?: number | null
           comentarios?: string | null
-          created_at?: string
           detalles?: string | null
-          estado?: Database["public"]["Enums"]["estado_campaña"]
-          estado_facturacion?: string
-          factura_id?: string | null
-          fecha_creacion?: string
-          id?: string
-          precio?: number
-          tipo_cobro?: Database["public"]["Enums"]["tipo_cobro_campaña"]
+          estado_campana?: string | null
+          estado_cobro?: string | null
+          estado_facturacion?: string | null
+          estado_pago_ana?: string | null
+          fecha: string
+          id: string
+          id_cliente: string
+          importe_cobrado?: number | null
+          importe_facturado?: number | null
+          importe_pendiente_cobrar?: number | null
+          importe_pendiente_facturar?: number | null
+          precio?: number | null
+          tipo_cobro?: string | null
         }
         Update: {
-          acciones?: Json | null
-          cliente_id?: string
-          cobro_ana?: number
+          acciones?: string | null
+          cobro_ana?: number | null
+          cobro_wololo_sound?: number | null
           comentarios?: string | null
-          created_at?: string
           detalles?: string | null
-          estado?: Database["public"]["Enums"]["estado_campaña"]
-          estado_facturacion?: string
-          factura_id?: string | null
-          fecha_creacion?: string
+          estado_campana?: string | null
+          estado_cobro?: string | null
+          estado_facturacion?: string | null
+          estado_pago_ana?: string | null
+          fecha?: string
           id?: string
-          precio?: number
-          tipo_cobro?: Database["public"]["Enums"]["tipo_cobro_campaña"]
+          id_cliente?: string
+          importe_cobrado?: number | null
+          importe_facturado?: number | null
+          importe_pendiente_cobrar?: number | null
+          importe_pendiente_facturar?: number | null
+          precio?: number | null
+          tipo_cobro?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "fk_campañas_cliente_id"
-            columns: ["cliente_id"]
+            foreignKeyName: "campanas_id_cliente_fkey"
+            columns: ["id_cliente"]
             isOneToOne: false
             referencedRelation: "clientes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_campañas_factura_id"
-            columns: ["factura_id"]
-            isOneToOne: false
-            referencedRelation: "facturas"
             referencedColumns: ["id"]
           },
         ]
       }
       clientes: {
         Row: {
-          created_at: string
-          direccion: string | null
           id: string
-          nif: string
-          nombre_cliente: string
-          nombre_pagador: string
+          nombre: string
         }
         Insert: {
-          created_at?: string
-          direccion?: string | null
-          id?: string
-          nif: string
-          nombre_cliente: string
-          nombre_pagador: string
+          id: string
+          nombre: string
         }
         Update: {
-          created_at?: string
-          direccion?: string | null
           id?: string
-          nif?: string
-          nombre_cliente?: string
-          nombre_pagador?: string
+          nombre?: string
         }
         Relationships: []
       }
-      facturas: {
+      clientes_sociedades: {
         Row: {
-          campaña_id: string | null
-          cliente_id: string
-          created_at: string
-          datos_acciones: string | null
-          estado_cobro: Database["public"]["Enums"]["estado_cobro_factura"]
-          fecha_cobro: string | null
-          fecha_facturacion: string
-          id: string
-          irpf_porcentaje: number
-          iva_porcentaje: number
-          iva_tipo: Database["public"]["Enums"]["iva_tipo_factura"]
-          precio_base: number
-          referencia_factura: string
-          total_factura: number
+          id_cliente: string
+          id_sociedad: string
         }
         Insert: {
-          campaña_id?: string | null
-          cliente_id: string
-          created_at?: string
-          datos_acciones?: string | null
-          estado_cobro?: Database["public"]["Enums"]["estado_cobro_factura"]
-          fecha_cobro?: string | null
-          fecha_facturacion?: string
-          id?: string
-          irpf_porcentaje?: number
-          iva_porcentaje?: number
-          iva_tipo?: Database["public"]["Enums"]["iva_tipo_factura"]
-          precio_base?: number
-          referencia_factura: string
-          total_factura?: number
+          id_cliente: string
+          id_sociedad: string
         }
         Update: {
-          campaña_id?: string | null
-          cliente_id?: string
-          created_at?: string
-          datos_acciones?: string | null
-          estado_cobro?: Database["public"]["Enums"]["estado_cobro_factura"]
-          fecha_cobro?: string | null
-          fecha_facturacion?: string
-          id?: string
-          irpf_porcentaje?: number
-          iva_porcentaje?: number
-          iva_tipo?: Database["public"]["Enums"]["iva_tipo_factura"]
-          precio_base?: number
-          referencia_factura?: string
-          total_factura?: number
+          id_cliente?: string
+          id_sociedad?: string
         }
         Relationships: [
           {
-            foreignKeyName: "fk_facturas_campaña_id"
-            columns: ["campaña_id"]
+            foreignKeyName: "clientes_sociedades_id_cliente_fkey"
+            columns: ["id_cliente"]
             isOneToOne: false
-            referencedRelation: "campañas"
+            referencedRelation: "clientes"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_facturas_cliente_id"
-            columns: ["cliente_id"]
+            foreignKeyName: "clientes_sociedades_id_sociedad_fkey"
+            columns: ["id_sociedad"]
             isOneToOne: false
-            referencedRelation: "clientes"
+            referencedRelation: "sociedades"
             referencedColumns: ["id"]
           },
         ]
       }
-      movimientos: {
+      contabilidad: {
         Row: {
-          cantidad: number
-          cliente_id: string | null
-          concepto: string
-          created_at: string
-          cuenta: Database["public"]["Enums"]["cuenta_movimiento"]
-          factura_id: string | null
+          acciones: string | null
+          cliente: string
+          comentarios: string | null
+          detalles: string | null
           fecha: string
+          hucha_adri: number | null
           id: string
-          tipo: Database["public"]["Enums"]["tipo_movimiento"]
+          id_campana: string | null
+          id_factura: string | null
+          importe: number
+          modalidad: string | null
+          pagador: string | null
+          saldo_paypal: number | null
+          saldo_sl: number | null
+          tipo: string | null
         }
         Insert: {
-          cantidad: number
-          cliente_id?: string | null
-          concepto: string
-          created_at?: string
-          cuenta: Database["public"]["Enums"]["cuenta_movimiento"]
-          factura_id?: string | null
-          fecha?: string
-          id?: string
-          tipo: Database["public"]["Enums"]["tipo_movimiento"]
+          acciones?: string | null
+          cliente: string
+          comentarios?: string | null
+          detalles?: string | null
+          fecha: string
+          hucha_adri?: number | null
+          id: string
+          id_campana?: string | null
+          id_factura?: string | null
+          importe: number
+          modalidad?: string | null
+          pagador?: string | null
+          saldo_paypal?: number | null
+          saldo_sl?: number | null
+          tipo?: string | null
         }
         Update: {
-          cantidad?: number
-          cliente_id?: string | null
-          concepto?: string
-          created_at?: string
-          cuenta?: Database["public"]["Enums"]["cuenta_movimiento"]
-          factura_id?: string | null
+          acciones?: string | null
+          cliente?: string
+          comentarios?: string | null
+          detalles?: string | null
           fecha?: string
+          hucha_adri?: number | null
           id?: string
-          tipo?: Database["public"]["Enums"]["tipo_movimiento"]
+          id_campana?: string | null
+          id_factura?: string | null
+          importe?: number
+          modalidad?: string | null
+          pagador?: string | null
+          saldo_paypal?: number | null
+          saldo_sl?: number | null
+          tipo?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "fk_movimientos_cliente_id"
-            columns: ["cliente_id"]
+            foreignKeyName: "contabilidad_id_campana_fkey"
+            columns: ["id_campana"]
             isOneToOne: false
-            referencedRelation: "clientes"
+            referencedRelation: "campanas"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_movimientos_factura_id"
-            columns: ["factura_id"]
+            foreignKeyName: "contabilidad_id_factura_fkey"
+            columns: ["id_factura"]
             isOneToOne: false
             referencedRelation: "facturas"
             referencedColumns: ["id"]
           },
         ]
       }
+      facturas: {
+        Row: {
+          cliente: string
+          comentarios: string | null
+          detalles: string | null
+          estado_cobro: string | null
+          factura: string
+          fecha: string
+          fecha_cobro: string | null
+          id: string
+          id_campana: string | null
+          id_sociedad: string | null
+          irpf: number | null
+          iva: number | null
+          pagador: string
+          pago_cliente: number | null
+          precio: number | null
+          referencia: string | null
+        }
+        Insert: {
+          cliente: string
+          comentarios?: string | null
+          detalles?: string | null
+          estado_cobro?: string | null
+          factura: string
+          fecha: string
+          fecha_cobro?: string | null
+          id: string
+          id_campana?: string | null
+          id_sociedad?: string | null
+          irpf?: number | null
+          iva?: number | null
+          pagador: string
+          pago_cliente?: number | null
+          precio?: number | null
+          referencia?: string | null
+        }
+        Update: {
+          cliente?: string
+          comentarios?: string | null
+          detalles?: string | null
+          estado_cobro?: string | null
+          factura?: string
+          fecha?: string
+          fecha_cobro?: string | null
+          id?: string
+          id_campana?: string | null
+          id_sociedad?: string | null
+          irpf?: number | null
+          iva?: number | null
+          pagador?: string
+          pago_cliente?: number | null
+          precio?: number | null
+          referencia?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facturas_id_campana_fkey"
+            columns: ["id_campana"]
+            isOneToOne: false
+            referencedRelation: "campanas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facturas_id_sociedad_fkey"
+            columns: ["id_sociedad"]
+            isOneToOne: false
+            referencedRelation: "sociedades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pagos_ana: {
+        Row: {
+          fecha: string | null
+          id: string
+          importe: number | null
+          modalidad: string | null
+          referencia: string | null
+        }
+        Insert: {
+          fecha?: string | null
+          id: string
+          importe?: number | null
+          modalidad?: string | null
+          referencia?: string | null
+        }
+        Update: {
+          fecha?: string | null
+          id?: string
+          importe?: number | null
+          modalidad?: string | null
+          referencia?: string | null
+        }
+        Relationships: []
+      }
+      pagos_ana_detalle: {
+        Row: {
+          id_campana: string
+          id_pago: string
+        }
+        Insert: {
+          id_campana: string
+          id_pago: string
+        }
+        Update: {
+          id_campana?: string
+          id_pago?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagos_ana_detalle_id_campana_fkey"
+            columns: ["id_campana"]
+            isOneToOne: false
+            referencedRelation: "campanas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_ana_detalle_id_pago_fkey"
+            columns: ["id_pago"]
+            isOneToOne: false
+            referencedRelation: "pagos_ana"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sociedades: {
+        Row: {
+          cif: string
+          direccion_1: string | null
+          direccion_2: string | null
+          id: string
+          nombre_fiscal: string
+        }
+        Insert: {
+          cif: string
+          direccion_1?: string | null
+          direccion_2?: string | null
+          id: string
+          nombre_fiscal: string
+        }
+        Update: {
+          cif?: string
+          direccion_1?: string | null
+          direccion_2?: string | null
+          id?: string
+          nombre_fiscal?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      recalculate_saldos: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       cuenta_movimiento: "Cuenta SL" | "Paypal"
-      estado_campaña: "EN CURSO" | "TERMINADO" | "PENDIENTE"
-      estado_cobro_factura: "Cobrado" | "Sin cobrar"
+      estado_campaña: "EN CURSO" | "TERMINADO" | "ESPERANDO"
+      estado_cobro: "Cobrado" | "Pendiente" | "Parcial" | "Perdido"
+      estado_cobro_factura: "Cobrado" | "Pendiente"
+      estado_facturacion: "Facturado" | "Pendiente" | "Parcial" | "N/A"
+      estado_pago_Ana: "Pagado" | "Pendiente" | "N/A"
       iva_tipo_factura: "España" | "Canarias" | "Europa" | "EEUU"
       tipo_cobro_campaña:
         | "Paypal"
-        | "Factura Wololo Sound"
+        | "Factura Wololo Sound SL"
         | "Factura Adrián Oller"
-      tipo_movimiento: "cobro" | "pago"
+        | "Factura Pevita"
+        | "Efectivo"
+        | "Factura Alejandro Ruiz"
+        | "Mixto"
+      tipo_movimiento: "Cobro" | "Pago"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -366,15 +504,22 @@ export const Constants = {
   public: {
     Enums: {
       cuenta_movimiento: ["Cuenta SL", "Paypal"],
-      estado_campaña: ["EN CURSO", "TERMINADO", "PENDIENTE"],
-      estado_cobro_factura: ["Cobrado", "Sin cobrar"],
+      estado_campaña: ["EN CURSO", "TERMINADO", "ESPERANDO"],
+      estado_cobro: ["Cobrado", "Pendiente", "Parcial", "Perdido"],
+      estado_cobro_factura: ["Cobrado", "Pendiente"],
+      estado_facturacion: ["Facturado", "Pendiente", "Parcial", "N/A"],
+      estado_pago_Ana: ["Pagado", "Pendiente", "N/A"],
       iva_tipo_factura: ["España", "Canarias", "Europa", "EEUU"],
       tipo_cobro_campaña: [
         "Paypal",
-        "Factura Wololo Sound",
+        "Factura Wololo Sound SL",
         "Factura Adrián Oller",
+        "Factura Pevita",
+        "Efectivo",
+        "Factura Alejandro Ruiz",
+        "Mixto",
       ],
-      tipo_movimiento: ["cobro", "pago"],
+      tipo_movimiento: ["Cobro", "Pago"],
     },
   },
 } as const
