@@ -3,9 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 
-type Cliente = Tables<'clientes'>;
-type ClienteInsert = TablesInsert<'clientes'>;
-type ClienteUpdate = TablesUpdate<'clientes'>;
+type Cliente = any;
+type ClienteInsert = any;
+type ClienteUpdate = any;
 
 export const useClientes = () => {
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -30,26 +30,31 @@ export const useClientes = () => {
     }
   };
 
-  // Create new cliente
-  const createCliente = async (clienteData: Omit<ClienteInsert, 'id' | 'created_at'>) => {
-    try {
-      const { data, error } = await supabase
-        .from('clientes')
-        .insert([clienteData])
-        .select()
-        .single();
+// Create new cliente
+const createCliente = async (clienteData: { nombre: string }) => {
+  try {
+    const payload = {
+      id: crypto.randomUUID(),
+      nombre: clienteData.nombre,
+    };
 
-      if (error) throw error;
-      
-      setClientes(prev => [...prev, data]);
-      toast.success('Cliente creado exitosamente');
-      return { data, error: null };
-    } catch (error: any) {
-      console.error('Error creating cliente:', error);
-      toast.error('Error al crear cliente: ' + error.message);
-      return { data: null, error };
-    }
-  };
+    const { data, error } = await supabase
+      .from('clientes')
+      .insert([payload as any])
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    setClientes(prev => [...prev, data]);
+    toast.success('Cliente creado exitosamente');
+    return { data, error: null } as const;
+  } catch (error: any) {
+    console.error('Error creating cliente:', error);
+    toast.error('Error al crear cliente: ' + error.message);
+    return { data: null, error } as const;
+  }
+};
 
   // Update existing cliente
   const updateCliente = async (id: string, updates: ClienteUpdate) => {

@@ -4,12 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useClientes } from "@/hooks/useClientes";
-import { Tables } from "@/integrations/supabase/types";
 import { Plus, Edit, Trash2, Users, CheckSquare, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { ClienteForm } from "@/components/forms/ClienteForm";
 import { ClienteDetailsModal } from "@/components/modals/ClienteDetailsModal";
 
-type Cliente = Tables<'clientes'>;
+type Cliente = any;
 
 export default function Clientes() {
   const { clientes, loading, deleteCliente } = useClientes();
@@ -213,36 +212,18 @@ export default function Clientes() {
                       />
                     </TableHead>
                   )}
-                   <TableHead>
-                      <Button 
-                        variant="ghost" 
-                        className="h-auto p-0 font-medium hover:bg-transparent"
-                        onClick={() => handleSort("nombre_cliente")}
-                      >
-                        Cliente
-                        {getSortIcon("nombre_cliente")}
-                     </Button>
-                   </TableHead>
-                   <TableHead>
-                      <Button 
-                        variant="ghost" 
-                        className="h-auto p-0 font-medium hover:bg-transparent"
-                        onClick={() => handleSort("nombre_pagador")}
-                      >
-                        Nombre Pagador
-                        {getSortIcon("nombre_pagador")}
-                     </Button>
-                   </TableHead>
-                   <TableHead>
-                     <Button 
-                       variant="ghost" 
-                       className="h-auto p-0 font-medium hover:bg-transparent"
-                       onClick={() => handleSort("nif")}
-                     >
-                       NIF
-                       {getSortIcon("nif")}
-                     </Button>
-                   </TableHead>
+ <TableHead>
+    <Button 
+      variant="ghost" 
+      className="h-auto p-0 font-medium hover:bg-transparent"
+      onClick={() => handleSort("nombre")}
+    >
+      Cliente
+      {getSortIcon("nombre")}
+    </Button>
+  </TableHead>
+<TableHead>Nombre Pagador</TableHead>
+<TableHead>NIF</TableHead>
                    <TableHead>Dirección</TableHead>
                    <TableHead>
                      <Button 
@@ -288,14 +269,14 @@ export default function Clientes() {
                         />
                       </TableCell>
                     )}
-                     <TableCell className="font-medium">{cliente.nombre_cliente}</TableCell>
-                     <TableCell>{cliente.nombre_pagador}</TableCell>
-                    <TableCell className="font-mono">{cliente.nif}</TableCell>
-                    <TableCell className="max-w-48">
-                      <div className="truncate" title={cliente.direccion}>
-                        {cliente.direccion}
-                      </div>
-                    </TableCell>
+ <TableCell className="font-medium">{cliente.nombre}</TableCell>
+ <TableCell>-</TableCell>
+ <TableCell className="font-mono">-</TableCell>
+ <TableCell className="max-w-48">
+   <div className="truncate" title={""}>
+     -
+   </div>
+ </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <span className="font-semibold">{getCampaignCount(cliente.id)}</span>

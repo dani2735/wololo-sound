@@ -20,14 +20,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useClientes } from "@/hooks/useClientes";
-import { Tables } from "@/integrations/supabase/types";
+import { supabase } from "@/integrations/supabase/client";
 
-type Cliente = Tables<'clientes'>;
+type Cliente = any;
 
 const formSchema = z.object({
   nombre_cliente: z.string().min(1, "El nombre es requerido"),
-  nombre_pagador: z.string().min(1, "El nombre del pagador es requerido"),
-  nif: z.string().min(1, "El NIF es requerido"),
+  nombre_pagador: z.string().optional(),
+  nif: z.string().optional(),
   direccion: z.string().optional(),
 });
 
@@ -43,39 +43,63 @@ export function ClienteForm({ isOpen, onClose, cliente }: ClienteFormProps) {
   const { createCliente, updateCliente } = useClientes();
   const isEditing = !!cliente;
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    values: {
-      nombre_cliente: cliente?.nombre_cliente || "",
-      nombre_pagador: cliente?.nombre_pagador || "",
-      nif: cliente?.nif || "",
-      direccion: cliente?.direccion || "",
-    },
-  });
+const form = useForm<FormData>({
+  resolver: zodResolver(formSchema),
+  values: {
+    nombre_cliente: cliente?.nombre || "",
+    nombre_pagador: "",
+    nif: "",
+    direccion: "",
+  },
+});
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const onSubmit = async (data: FormData) => {
-    setIsSubmitting(true);
-    
-    // Ensure required fields are strings, not undefined
-    const clienteData = {
-      nombre_cliente: data.nombre_cliente!,
-      nombre_pagador: data.nombre_pagador!,
-      nif: data.nif!,
-      direccion: data.direccion || null,
-    };
-    
+const onSubmit = async (data: FormData) => {
+  setIsSubmitting(true);
+
+  try {
+    let clienteId = cliente?.id;
+
     if (isEditing && cliente) {
-      await updateCliente(cliente.id, clienteData);
+      await updateCliente(cliente.id, { nombre: data.nombre_cliente } as any);
+      clienteId = cliente.id;
     } else {
-      await createCliente(clienteData);
+      const result = await createCliente({ nombre: data.nombre_cliente } as any);
+      clienteId = result.data?.id;
     }
-    
+
+    // If fiscal data provided, create sociedad and link it
+    if (clienteId && (data.nombre_pagador || data.nif || data.direccion)) {
+      const sociedadId = crypto.randomUUID();
+      const { data: sociedad, error: sociedadError } = await (supabase as any)
+        .from('sociedades')
+        .insert([
+          {
+            id: sociedadId,
+            nombre_fiscal: data.nombre_pagador || data.nombre_cliente,
+            cif: data.nif || '',
+            direccion_1: data.direccion || null,
+            direccion_2: null,
+          }
+        ])
+        .select()
+        .single();
+
+      if (sociedadError) throw sociedadError;
+
+      const { error: linkError } = await (supabase as any)
+        .from('clientes_sociedades')
+        .insert([{ id_cliente: clienteId, id_sociedad: sociedad.id }]);
+
+      if (linkError) throw linkError;
+    }
+  } finally {
     setIsSubmitting(false);
     form.reset();
     onClose();
-  };
+  }
+};
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

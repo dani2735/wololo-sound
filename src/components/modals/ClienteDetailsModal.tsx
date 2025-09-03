@@ -1,9 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Users, FileText } from "lucide-react";
-import { Tables } from "@/integrations/supabase/types";
-
-type Cliente = Tables<'clientes'>;
+type Cliente = any;
 
 interface ClienteDetailsModalProps {
   cliente: Cliente;
@@ -37,10 +35,10 @@ export function ClienteDetailsModal({ cliente, onClose, onEdit, onDelete }: Clie
             <div>
               <h3 className="font-semibold mb-3">Información del Cliente</h3>
               <div className="space-y-2">
-                <p><strong>Nombre:</strong> {cliente.nombre_cliente}</p>
-                <p><strong>Nombre Pagador:</strong> {cliente.nombre_pagador}</p>
-                <p><strong>NIF:</strong> <span className="font-mono">{cliente.nif}</span></p>
-                <p><strong>Dirección:</strong> {cliente.direccion || 'No especificada'}</p>
+<p><strong>Nombre:</strong> {cliente.nombre}</p>
+<p><strong>Nombre Pagador:</strong> -</p>
+<p><strong>NIF:</strong> <span className="font-mono">-</span></p>
+<p><strong>Dirección:</strong> No especificada</p>
               </div>
             </div>
 
