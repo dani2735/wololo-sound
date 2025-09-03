@@ -1,6 +1,9 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Users, FileText } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
 type Cliente = any;
 
 interface ClienteDetailsModalProps {
@@ -11,13 +14,32 @@ interface ClienteDetailsModalProps {
 }
 
 export function ClienteDetailsModal({ cliente, onClose, onEdit, onDelete }: ClienteDetailsModalProps) {
-  // TODO: Implement when campaigns are connected to Supabase
+  const [campanasData, setCampanasData] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadCampanasData = async () => {
+      try {
+        const { data, error } = await (supabase as any)
+          .from('campanas')
+          .select('*')
+          .eq('id_cliente', cliente.id);
+        
+        if (error) throw error;
+        setCampanasData(data || []);
+      } catch (error) {
+        console.error('Error loading campaigns:', error);
+      }
+    };
+
+    loadCampanasData();
+  }, [cliente.id]);
+
   const getCampaignCount = (clienteId: string) => {
-    return 0;
+    return campanasData.length;
   };
 
   const getTotalFacturado = (clienteId: string) => {
-    return 0;
+    return campanasData.reduce((total, c) => total + (c.importe_facturado || 0), 0);
   };
 
   return (
@@ -36,9 +58,10 @@ export function ClienteDetailsModal({ cliente, onClose, onEdit, onDelete }: Clie
               <h3 className="font-semibold mb-3">Información del Cliente</h3>
               <div className="space-y-2">
 <p><strong>Nombre:</strong> {cliente.nombre}</p>
-<p><strong>Nombre Pagador:</strong> -</p>
-<p><strong>NIF:</strong> <span className="font-mono">-</span></p>
-<p><strong>Dirección:</strong> No especificada</p>
+<p><strong>Nombre Pagador:</strong> {cliente.sociedad?.nombre_fiscal || 'No especificado'}</p>
+<p><strong>NIF:</strong> <span className="font-mono">{cliente.sociedad?.cif || 'No especificado'}</span></p>
+<p><strong>Dirección:</strong> {cliente.sociedad?.direccion_1 || 'No especificada'}</p>
+{cliente.sociedad?.direccion_2 && <p><strong>Dirección 2:</strong> {cliente.sociedad.direccion_2}</p>}
               </div>
             </div>
 
@@ -65,11 +88,28 @@ export function ClienteDetailsModal({ cliente, onClose, onEdit, onDelete }: Clie
           </div>
 
           <div className="mt-4">
-            <h3 className="font-semibold mb-2">Campañas Asociadas</h3>
-            <div className="space-y-2">
-              <p className="text-center text-muted-foreground py-4">
-                Las campañas se mostrarán cuando estén conectadas a Supabase.
-              </p>
+            <h3 className="font-semibold mb-2">Campañas Asociadas ({campanasData.length})</h3>
+            <div className="space-y-2 max-h-40 overflow-y-auto">
+              {campanasData.length > 0 ? (
+                campanasData.map((campana: any) => (
+                  <div key={campana.id} className="flex justify-between items-center p-2 bg-muted rounded">
+                    <div>
+                      <p className="font-medium text-sm">{campana.detalles}</p>
+                      <p className="text-xs text-muted-foreground">{campana.fecha} - {campana.estado_campana}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-sm">{campana.precio?.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p>
+                      <Badge variant={campana.estado_cobro === 'Cobrado' ? 'default' : 'secondary'} className="text-xs">
+                        {campana.estado_cobro}
+                      </Badge>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-center text-muted-foreground py-4">
+                  No hay campañas asociadas a este cliente.
+                </p>
+              )}
             </div>
           </div>
 

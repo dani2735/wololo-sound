@@ -11,17 +11,31 @@ export const useClientes = () => {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch all clientes
+  // Fetch all clientes with their sociedades
   const fetchClientes = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Get clientes with their sociedades
+      const { data: clientesData, error: clientesError } = await supabase
         .from('clientes')
-        .select('*')
+        .select(`
+          *,
+          clientes_sociedades!inner(
+            sociedades!inner(*)
+          )
+        `)
         .order('nombre', { ascending: true });
 
-      if (error) throw error;
-      setClientes(data || []);
+      if (clientesError) throw clientesError;
+
+      // Transform the data to include sociedad info directly
+      const transformedClientes = clientesData?.map((cliente: any) => ({
+        ...cliente,
+        sociedad: cliente.clientes_sociedades?.[0]?.sociedades || null
+      })) || [];
+
+      setClientes(transformedClientes as any);
     } catch (error: any) {
       console.error('Error fetching clientes:', error);
       toast.error('Error al cargar clientes: ' + error.message);

@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useClientes } from "@/hooks/useClientes";
+import { supabase } from "@/integrations/supabase/client";
 import { Plus, Edit, Trash2, Users, CheckSquare, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { ClienteForm } from "@/components/forms/ClienteForm";
 import { ClienteDetailsModal } from "@/components/modals/ClienteDetailsModal";
@@ -20,14 +21,34 @@ export default function Clientes() {
   const [sortField, setSortField] = useState<string>("");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
+  const [campanasData, setCampanasData] = useState<any[]>([]);
+
+  // Load campaigns data
+  const loadCampanasData = async () => {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('campanas')
+        .select('*');
+      
+      if (error) throw error;
+      setCampanasData(data || []);
+    } catch (error) {
+      console.error('Error loading campaigns:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadCampanasData();
+  }, []);
+
   const getCampaignCount = (clienteId: string) => {
-    // TODO: Implement when campaigns are connected to Supabase
-    return 0;
+    return campanasData.filter(c => c.id_cliente === clienteId).length;
   };
 
   const getTotalFacturado = (clienteId: string) => {
-    // TODO: Implement when campaigns are connected to Supabase  
-    return 0;
+    return campanasData
+      .filter(c => c.id_cliente === clienteId)
+      .reduce((total, c) => total + (c.importe_facturado || 0), 0);
   };
 
   const handleDelete = async (id: string) => {
@@ -270,11 +291,11 @@ export default function Clientes() {
                       </TableCell>
                     )}
  <TableCell className="font-medium">{cliente.nombre}</TableCell>
- <TableCell>-</TableCell>
- <TableCell className="font-mono">-</TableCell>
+ <TableCell>{cliente.sociedad?.nombre_fiscal || '-'}</TableCell>
+ <TableCell className="font-mono">{cliente.sociedad?.cif || '-'}</TableCell>
  <TableCell className="max-w-48">
-   <div className="truncate" title={""}>
-     -
+   <div className="truncate" title={cliente.sociedad?.direccion_1 || ''}>
+     {cliente.sociedad?.direccion_1 || '-'}
    </div>
  </TableCell>
                     <TableCell>
